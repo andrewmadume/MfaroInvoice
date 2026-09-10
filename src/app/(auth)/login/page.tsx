@@ -1,0 +1,2 @@
+import Link from "next/link";
+export default function Login() { return <main className="auth"><Link href="/" className="brand"><span>M</span>MfaroInvoice</Link><section><p className="eyebrow">WELCOME BACK</p><h1>Sign in</h1><form><label>Email<input type="email" autoComplete="email" required /></label><label>Password<input type="password" autoComplete="current-password" required /></label><button className="button" type="submit">Sign in securely</button></form><p>New to MfaroInvoice? <Link href="/register">Create an account</Link></p></section></main>; }
