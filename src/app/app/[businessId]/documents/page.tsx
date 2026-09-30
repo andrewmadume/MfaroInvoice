@@ -1,0 +1,8 @@
+import { DocumentUpload } from "@/components/document-upload";
+import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
+
+export default async function DocumentsPage({ params, searchParams }: { params: Promise<{ businessId: string }>; searchParams: Promise<{ uploaded?: string }> }) {
+  const { businessId } = await params; const { uploaded } = await searchParams; const supabase = await createClient(); const { data: documents } = await supabase.from("documents").select("id,original_filename,mime_type,size_bytes,created_at,storage_path").eq("business_id", businessId).order("created_at", { ascending: false });
+  return <section className="workspace"><div className="page-title"><div><p className="eyebrow">PRIVATE DOCUMENTS</p><h1>Documents</h1></div></div>{uploaded && <p className="success">Document uploaded.</p>}<div className="two-column"><section className="form-card"><p className="eyebrow">PRIVATE STORAGE</p><h2>Upload a document</h2><p>Files remain in the business’s private storage bucket.</p><DocumentUpload businessId={businessId} /></section><section className="table-card"><h2>Recent uploads</h2>{documents?.length ? <table><thead><tr><th>File</th><th>Type</th><th className="align-right">Size</th><th></th></tr></thead><tbody>{documents.map((document) => <tr key={document.id}><td>{document.original_filename}</td><td>{document.mime_type}</td><td className="align-right">{(Number(document.size_bytes) / 1024).toFixed(1)} KB</td><td className="align-right"><Link className="text-button" href={`/api/businesses/${businessId}/documents/${document.id}`}>Download</Link></td></tr>)}</tbody></table> : <p className="empty-state">No documents uploaded.</p>}</section></div></section>;
+}
