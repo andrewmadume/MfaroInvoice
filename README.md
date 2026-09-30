@@ -4,19 +4,27 @@ Secure multi-tenant invoicing for African businesses. The repository starts with
 
 ## Run locally
 
-1. Copy `.env.example` to `.env.local` and fill in a Supabase project's URL and publishable key.
+1. Copy `.env.example` to `.env.local` and fill in a Supabase project's URL, publishable key, and canonical application URL.
 2. Install dependencies with `npm install`.
-3. Apply `supabase/migrations/0001_secure_foundation.sql` using Supabase CLI (`supabase db push`).
+3. Apply every migration in `supabase/migrations` using Supabase CLI (`supabase db push`).
 4. Run `npm run dev`.
 
 The `SUPABASE_SERVICE_ROLE_KEY` is deliberately unused by browser code. Keep it server-only for exceptional administrative jobs, never normal user requests.
 
-## Current foundation
+## Phase 3 operations
 
-- Branded mobile-responsive landing, sign-in/register routes, dashboard guard, web manifest, and offline shell service worker.
-- UUID relational schema for businesses, memberships, clients, products, invoices, invoice items, payments, and audit logs.
-- `NUMERIC(19,4)` money columns, database integrity constraints, tenant-reference triggers, role-scoped RLS, private Storage policies, and a controlled business-onboarding RPC.
-- Cross-tenant verification starter at `supabase/tests/tenant_isolation.sql`.
+- Business-profile management, clients, multi-tenant dashboard, invoice numbering, VAT/discount line calculation, status tracking, and payment recording.
+- Quote creation and transactional quote-to-invoice conversion.
+- Printable invoice view for browser “Save as PDF”, web manifest, service worker, and install prompt on supported browsers.
+- Financial documents are created only through transactional, permission-checked PostgreSQL RPCs; browser-submitted totals are recalculated by the database.
+- Recurring-invoice templates, reminder queue/dispatcher, inventory movements, projects and time entries, reports, statements, Excel-compatible CSV exports, and private document uploads/downloads.
+- Payment-provider preferences support Paystack and Flutterwave configuration, but live collection requires provider credentials and verified webhook deployment.
+
+Deploy `supabase/functions/reminder-dispatcher` and schedule it through Supabase Cron or an authenticated scheduler to send due reminders. It requires `RESEND_API_KEY` and `REMINDER_FROM` as Edge Function secrets.
+
+## Security verification
+
+Create two real test users with separate **Test Company Alpha** and **Test Company Beta** businesses, seed the IDs named in `.env.example` as `SUPABASE_TEST_*`, then run `npm run test:tenant`. The script makes authenticated REST and Storage requests as both users and fails if either tenant can read or mutate the other tenant's data.
 
 ## Before production
 
