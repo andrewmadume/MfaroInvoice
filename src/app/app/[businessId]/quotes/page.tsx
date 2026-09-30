@@ -1,0 +1,10 @@
+import Link from "next/link";
+import { convertQuote } from "@/app/app/actions";
+import { createClient } from "@/lib/supabase/server";
+type ClientRelation = { name?: string } | { name?: string }[] | null;
+function clientName(client: unknown) { const value = client as ClientRelation; return Array.isArray(value) ? value[0]?.name : value?.name; }
+
+export default async function QuotesPage({ params, searchParams }: { params: Promise<{ businessId: string }>; searchParams: Promise<{ created?: string; error?: string }> }) {
+  const { businessId } = await params; const { created, error } = await searchParams; const supabase = await createClient(); const { data: quotes } = await supabase.from("quotes").select("id,quote_number,status,issue_date,expiry_date,total,client:clients(name)").eq("business_id", businessId).order("created_at", { ascending: false });
+  return <section className="workspace"><div className="page-title"><div><p className="eyebrow">QUOTES</p><h1>Quotes</h1></div><Link className="button" href={`/app/${businessId}/quotes/new`}>New quote</Link></div>{created && <p className="success">Quote created.</p>}{error && <p className="alert" role="alert">The quote could not be converted.</p>}<section className="table-card">{quotes?.length ? <table><thead><tr><th>Quote</th><th>Client</th><th>Expiry</th><th>Status</th><th className="align-right">Total</th><th></th></tr></thead><tbody>{quotes.map((quote) => <tr key={quote.id}><td>{quote.quote_number}</td><td>{clientName(quote.client)}</td><td>{quote.expiry_date ?? "—"}</td><td><span className={`badge ${quote.status}`}>{quote.status}</span></td><td className="align-right">R {Number(quote.total).toFixed(2)}</td><td>{quote.status !== "converted" && <form action={convertQuote}><input type="hidden" name="businessId" value={businessId} /><input type="hidden" name="quoteId" value={quote.id} /><input type="hidden" name="dueDate" value="" /><button className="text-button">Convert</button></form>}</td></tr>)}</tbody></table> : <p className="empty-state">Quotes help you turn prospective work into invoices.</p>}</section></section>;
+}
