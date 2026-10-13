@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./phase3.css";
 import { RegisterServiceWorker } from "@/components/register-service-worker";
 
 export const metadata: Metadata = {
