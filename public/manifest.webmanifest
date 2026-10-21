@@ -1,1 +1,22 @@
-{"name":"MfaroInvoice","short_name":"MfaroInvoice","start_url":"/","display":"standalone","background_color":"#061b6b","theme_color":"#061b6b","icons":[{"src":"/icon.png","sizes":"512x512","type":"image/png"}]}
+{
+  "name": "MfaroInvoice",
+  "short_name": "MfaroInvoice",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#061b6b",
+  "theme_color": "#061b6b",
+  "icons": [
+    {
+      "src": "/MfaroInvoice-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

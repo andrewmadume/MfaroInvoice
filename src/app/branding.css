@@ -1,0 +1,22 @@
+.brand.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  line-height: 0;
+}
+
+.brand-logo-image {
+  width: 3rem;
+  height: 3rem;
+  object-fit: contain;
+}
+
+.brand-logo-image-compact {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.app-nav .brand-logo-image-compact {
+  width: 2.25rem;
+  height: 2.25rem;
+}

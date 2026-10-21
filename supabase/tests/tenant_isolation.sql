@@ -1,9 +1,20 @@
--- Run with a Supabase test user JWT for each tenant. These assertions intentionally cross tenant IDs.
+-- Execute after migrations as the database owner; makes no persistent changes.
+-- Behavioral checks: npm test (isolated PostgreSQL), npm run test:tenant (live fixtures).
 begin;
--- Setup is performed by the test harness: Alpha user only belongs to alpha_business.
--- The policy must return zero rows and reject all mutations for Beta.
-select count(*) = 0 as alpha_cannot_read_beta_clients from public.clients where business_id = :'beta_business_id';
-select count(*) = 0 as alpha_cannot_read_beta_invoices from public.invoices where business_id = :'beta_business_id';
-select count(*) = 0 as alpha_cannot_read_beta_payments from public.payments where business_id = :'beta_business_id';
--- Expect 42501: every insert/update/delete using beta_business_id must be rejected by WITH CHECK / USING.
+do $$
+begin
+  if not (select relrowsecurity from pg_class where oid='public.payment_intents'::regclass) then
+    raise exception 'payment intent RLS is disabled';
+  end if;
+  if has_table_privilege('authenticated','public.payment_intents','UPDATE')
+     or has_table_privilege('authenticated','public.business_users','UPDATE')
+     or has_table_privilege('authenticated','public.business_user_permissions','INSERT')
+     or has_column_privilege('authenticated','public.products','stock_on_hand','UPDATE')
+     or has_column_privilege('authenticated','public.businesses','mfa_required','UPDATE') then
+    raise exception 'protected direct write privileges remain';
+  end if;
+  if has_function_privilege('authenticated','public.finalize_provider_payment(text,text,numeric,text,timestamptz)','EXECUTE') then
+    raise exception 'provider finalization is callable by normal users';
+  end if;
+end $$;
 rollback;
