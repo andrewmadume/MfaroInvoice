@@ -21,9 +21,11 @@ test("migration chain and financial/security regression scenarios", async () => 
       alter table storage.objects enable row level security;
       grant usage on schema public,auth,storage to anon,authenticated,service_role;
       grant select on auth.users to authenticated,service_role;
+      alter default privileges in schema public grant execute on functions to anon,authenticated,service_role;
     `);
     for (const file of (await readdir(new URL("../supabase/migrations/", import.meta.url))).sort()) {
-      const sql = (await readFile(new URL(`../supabase/migrations/${file}`, import.meta.url), "utf8")).replace("create extension if not exists pgcrypto;", "");
+      // These hosted extensions are verified on Supabase; PGlite supplies core crypto.
+      const sql = (await readFile(new URL(`../supabase/migrations/${file}`, import.meta.url), "utf8")).replace(/create extension if not exists (pgcrypto|pg_cron|pg_net)( with schema extensions)?;/g, "");
       try { await db.exec(sql); } catch (error) { throw new Error(`${file}: ${error.message}`, { cause:error }); }
     }
     await db.exec("grant all on all tables in schema public to service_role; grant usage on all sequences in schema public to service_role;");
@@ -104,6 +106,8 @@ test("migration chain and financial/security regression scenarios", async () => 
     assert.equal(Number(summary.outstanding),1003);
     assert.equal(Number(summary.topClients[0].invoiced),1003.24);
     await db.exec("reset role");
+    assert.equal(Number(await scalar("select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.prosecdef and has_function_privilege('anon',p.oid,'EXECUTE')")),0);
+    assert.equal(await scalar("select has_function_privilege('authenticated','public.next_document_number(uuid,text)','EXECUTE')"),false);
     await db.exec(await readFile(new URL("../supabase/tests/tenant_isolation.sql",import.meta.url),"utf8"));
   } finally { await db.close(); }
 });

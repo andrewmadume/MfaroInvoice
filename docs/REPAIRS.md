@@ -1,6 +1,6 @@
 # Inspection repairs
 
-The repair migration is `0007_correctness_and_authorization.sql`. Apply migrations in order; existing migration files remain unchanged.
+The repair migration is `20261021113718_correctness_and_authorization.sql`. Apply migrations in order. Migration filenames now match the versions recorded in the initialized Supabase project; their SQL contents are preserved. `20261021114006_explicit_rpc_access.sql` additionally restricts direct role grants inherited from Supabase defaults. See [current setup status](SUPABASE_SETUP.md).
 
 | Inspection finding | Repair |
 | --- | --- |
@@ -26,7 +26,7 @@ Additional repairs include scheduler-secret authentication, explicit POST paymen
 
 ## Deployment
 
-1. Back up the database and apply migration 0007 after 0001–0006. Deploy the app and both Edge Functions together with this migration.
+1. Back up the database and apply the correctness-and-authorization migration after the six preceding migrations. Deploy the app and both Edge Functions together with this migration.
 2. Set a strong, random `SCHEDULER_SECRET` as an Edge Function secret. Each scheduled POST must send `x-scheduler-secret` with that value. The handlers reject missing/incorrect secrets, including when gateway JWT verification is disabled as configured in `supabase/config.toml`.
 3. Schedule automation-dispatcher for invoice generation/overdue updates and reminder-dispatcher for email delivery. The automation handler no longer sends emails. Reminder claims use five-minute leases, a stable Resend Idempotency-Key, and a retry window shorter than the provider's 24-hour idempotency retention. Failed/expired deliveries require investigation before manual retry.
 4. Run `npm test`, the SQL assertions in `supabase/tests/tenant_isolation.sql`, and `npm run test:tenant` using isolated Alpha/Beta fixtures. Complete an end-to-end sandbox payment and email test with deployment credentials.

@@ -26,7 +26,7 @@ The `SUPABASE_SERVICE_ROLE_KEY` is deliberately unused by browser code. Keep it 
 
 Deploy `supabase/functions/reminder-dispatcher` and schedule it through Supabase Cron or an authenticated scheduler to send due reminders. It requires `RESEND_API_KEY` and `REMINDER_FROM` as Edge Function secrets.
 
-For live payment collection, set `PAYSTACK_SECRET_KEY` and/or `FLUTTERWAVE_SECRET_KEY` in the server runtime, set `FLUTTERWAVE_WEBHOOK_HASH` when Flutterwave is enabled, then register the public webhook routes at `/api/webhooks/paystack` and `/api/webhooks/flutterwave`. Deploy and schedule `supabase/functions/automation-dispatcher` every 15 minutes after applying migration `0006_growth_automation_and_payments.sql`.
+For live payment collection, set `PAYSTACK_SECRET_KEY` and/or `FLUTTERWAVE_SECRET_KEY` in the server runtime, set `FLUTTERWAVE_WEBHOOK_HASH` when Flutterwave is enabled, then register the public webhook routes at `/api/webhooks/paystack` and `/api/webhooks/flutterwave`. Deploy and schedule `supabase/functions/automation-dispatcher` every 15 minutes after applying migration `20261021113702_growth_automation_and_payments.sql`.
 
 ## Security verification
 
@@ -42,4 +42,4 @@ The included GitHub Actions workflow verifies and deploys pushes to `main` throu
 
 ## Inspection repairs and verification
 
-Apply migration `0007_correctness_and_authorization.sql` with the application update. See [repair details and deployment notes](docs/REPAIRS.md). Run `npm test` for isolated PostgreSQL and export/formatting regressions; `npm run test:tenant` additionally requires real Supabase test fixtures. Edge Function schedulers must send the configured `SCHEDULER_SECRET` in the `x-scheduler-secret` header.
+Apply migration `20261021113718_correctness_and_authorization.sql` with the application update. See [repair details and deployment notes](docs/REPAIRS.md). Run `npm test` for isolated PostgreSQL and export/formatting regressions; `npm run test:tenant` additionally requires real Supabase test fixtures. Edge Function schedulers must send the configured `SCHEDULER_SECRET` in the `x-scheduler-secret` header.

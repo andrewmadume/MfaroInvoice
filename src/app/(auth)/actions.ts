@@ -3,13 +3,13 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { applicationUrl } from "@/lib/site-url";
 
 const credentialsSchema = z.object({ email: z.string().trim().email().max(254), password: z.string().min(12).max(1024) });
 const registrationSchema = credentialsSchema.extend({ businessName: z.string().trim().min(2).max(160) });
 const businessSchema = z.object({ name: z.string().trim().min(2).max(160), slug: z.string().trim().toLowerCase().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(160), currency: z.string().regex(/^[A-Z]{3}$/) });
 
 function errorRedirect(path: string, code: string): never { redirect(`${path}?error=${encodeURIComponent(code)}`); }
-function applicationUrl(): string { const configured = process.env.NEXT_PUBLIC_SITE_URL; if (!configured) throw new Error("NEXT_PUBLIC_SITE_URL must be configured"); return configured.replace(/\/$/, ""); }
 
 /** Authenticates through Supabase Auth. Passwords are never stored or logged. */
 export async function login(formData: FormData) {

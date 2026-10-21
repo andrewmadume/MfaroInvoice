@@ -20,5 +20,8 @@ export async function updateSession(request: NextRequest) {
 
   // Claims are signature-verified; do not use getSession() for authorization.
   const { data: token } = await supabase.auth.getClaims();
+  response.headers.set("cache-control", "private, no-store");
+  response.headers.set("pragma", "no-cache");
+  response.headers.set("expires", "0");
   return { response, userId: token?.claims.sub ?? null };
 }

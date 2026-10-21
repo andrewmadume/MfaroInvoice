@@ -2,6 +2,28 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { csvCell, currencyDecimals, formatMoney } from "../src/lib/finance.ts";
 import { allRows } from "../src/lib/queries.ts";
+import { copySessionResponse } from "../src/lib/session-response.ts";
+import { applicationUrl } from "../src/lib/site-url.ts";
+
+test("application URLs select the correct environment and reject unsafe origins", () => {
+  assert.equal(applicationUrl({NEXT_PUBLIC_SITE_URL:"http://localhost:3000/"}),"http://localhost:3000");
+  assert.equal(applicationUrl({VERCEL_ENV:"production",VERCEL_PROJECT_PRODUCTION_URL:"app.example.com"}),"https://app.example.com");
+  assert.equal(applicationUrl({VERCEL_ENV:"preview",VERCEL_URL:"preview.example.com",VERCEL_PROJECT_PRODUCTION_URL:"app.example.com"}),"https://preview.example.com");
+  assert.throws(()=>applicationUrl({}),/Configure/);
+  assert.throws(()=>applicationUrl({NEXT_PUBLIC_SITE_URL:"http://app.example.com"}),/HTTPS/);
+  assert.throws(()=>applicationUrl({NEXT_PUBLIC_SITE_URL:"https://user:password@app.example.com"}),/credentials/);
+});
+
+test("authentication redirects retain refreshed cookies and cache protection", () => {
+  const cookies=[{name:"session",value:"refreshed",httpOnly:true,path:"/"}];
+  const source={cookies:{getAll:()=>cookies},headers:new Headers({"cache-control":"private, no-store","expires":"0","pragma":"no-cache"})};
+  const copied=[];
+  const target={cookies:{set:cookie=>copied.push(cookie)},headers:new Headers({location:"/login"})};
+  assert.equal(copySessionResponse(source,target),target);
+  assert.deepEqual(copied,cookies);
+  assert.equal(target.headers.get("cache-control"),"private, no-store");
+  assert.equal(target.headers.get("location"),"/login");
+});
 
 test("CSV neutralizes text formulas while preserving numeric data and quoting", () => {
   for (const value of ["=1+1", "+SUM(A1)", "-1+1", "@SUM(A1)", " \t=1"]) assert.equal(csvCell(value),`"'${value}"`);

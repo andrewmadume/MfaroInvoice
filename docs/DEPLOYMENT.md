@@ -41,7 +41,7 @@ Set these in Vercel Project Settings → Environment Variables for **Production*
 ## Before enabling live payments
 
 1. Apply all migrations in `supabase/migrations` to the production Supabase project.
-2. Deploy the `reminder-dispatcher` and `automation-dispatcher` Supabase Edge Functions, then configure their schedules. Set a random `SCHEDULER_SECRET` as an Edge Function secret and send it as `x-scheduler-secret` on each scheduled POST. Automation generates invoices/overdue updates; only the reminder dispatcher sends email. Apply migration 0007 before deploying these handlers. See [repair deployment notes](REPAIRS.md).
+2. Deploy the `reminder-dispatcher` and `automation-dispatcher` Supabase Edge Functions, then configure their schedules. Set a random `SCHEDULER_SECRET` as an Edge Function secret and send it as `x-scheduler-secret` on each scheduled POST. Automation generates invoices/overdue updates; only the reminder dispatcher sends email. Apply the correctness-and-authorization migration before deploying these handlers. See [repair deployment notes](REPAIRS.md).
 3. Register these exact public webhook URLs with the provider:
    - `https://your-domain.example/api/webhooks/paystack`
    - `https://your-domain.example/api/webhooks/flutterwave`
