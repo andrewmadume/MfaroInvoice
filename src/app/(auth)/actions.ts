@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { applicationUrl } from "@/lib/site-url";
+import { registrationErrorCode } from "@/lib/auth-errors";
 
 const credentialsSchema = z.object({ email: z.string().trim().email().max(254), password: z.string().min(12).max(1024) });
 const registrationSchema = credentialsSchema.extend({ businessName: z.string().trim().min(2).max(160) });
@@ -26,7 +27,7 @@ export async function register(formData: FormData) {
   if (!parsed.success) errorRedirect("/register", "invalid-registration");
   const supabase = await createClient();
   const { error, data } = await supabase.auth.signUp({ email: parsed.data.email, password: parsed.data.password, options: { emailRedirectTo: `${applicationUrl()}/auth/confirm` } });
-  if (error) errorRedirect("/register", "registration-failed");
+  if (error) errorRedirect("/register", registrationErrorCode(error));
   if (!data.session) redirect("/check-email");
   redirect("/onboarding");
 }

@@ -31,6 +31,16 @@ The following remain dependent on server credentials or publication:
 
 Do not paste private keys into issue comments or chat. Store them directly in the corresponding server/Edge Function environment.
 
+## External tester registration (24 October 2026)
+
+Auth logs show 15 signup requests rejected with `over_email_send_rate_limit` (HTTP 429), plus unconfirmed-email login failures. Custom SMTP was disabled. Supabase's default sender is restricted to organization team addresses and currently permits only two emails per hour; it is unsuitable for external tester registration. Configure a verified sender with custom SMTP rather than disabling email confirmation.
+
+Resend setup is prepared but not yet saved: host `smtp.resend.com`, port `465`, username `resend`, sender name `MfaroInvoice`. Complete Resend sign-in, verify an owned sending domain using its DNS records, then enter the Resend API key directly as the Supabase SMTP password. Keep click tracking disabled for confirmation links. After saving, verify delivery and confirmation with one tester before retrying the remaining registrations. Do not repeatedly retry while rate limited.
+
+Registration now maps delivery limits and validation failures to safe, useful messages without exposing raw provider errors or revealing whether an account exists.
+
+References: https://supabase.com/docs/guides/auth/auth-smtp and https://resend.com/docs/send-with-supabase-smtp.
+
 ## Security advisor interpretation
 
 The anonymous SECURITY DEFINER execution warning is resolved. The remaining advisor warning identifies the intentionally callable authenticated RPCs; those functions enforce tenant permissions and, where appropriate, MFA within their bodies. See the advisor documentation: https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable

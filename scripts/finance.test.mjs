@@ -4,6 +4,19 @@ import { csvCell, currencyDecimals, formatMoney } from "../src/lib/finance.ts";
 import { allRows } from "../src/lib/queries.ts";
 import { copySessionResponse } from "../src/lib/session-response.ts";
 import { applicationUrl } from "../src/lib/site-url.ts";
+import { registrationErrorCode, registrationErrorMessage } from "../src/lib/auth-errors.ts";
+
+test("registration explains delivery limits without reflecting provider errors", () => {
+  const code = registrationErrorCode({code:"over_email_send_rate_limit",status:429});
+  assert.equal(code,"email-rate-limited");
+  assert.match(registrationErrorMessage(code),/Confirmation emails.*rate limited/);
+  assert.equal(registrationErrorCode({code:"email_address_not_authorized"}),"email-delivery-unavailable");
+  assert.equal(registrationErrorCode({status:429}),"too-many-attempts");
+  assert.equal(registrationErrorCode({code:"unknown-provider-detail"}),"registration-failed");
+  assert.doesNotMatch(registrationErrorMessage("<script>private provider detail</script>"),/script|private provider/);
+  assert.match(registrationErrorMessage("invalid-registration"),/12–1024/);
+  assert.match(registrationErrorMessage("constructor"),/could not create/);
+});
 
 test("application URLs select the correct environment and reject unsafe origins", () => {
   assert.equal(applicationUrl({NEXT_PUBLIC_SITE_URL:"http://localhost:3000/"}),"http://localhost:3000");
