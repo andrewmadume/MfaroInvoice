@@ -21,7 +21,7 @@
   max-width: 65vw;
 }
 
-.auth > .brand-logo {
+.auth > .brand.brand-logo {
   display: flex;
   width: fit-content;
   margin: 0 auto;
