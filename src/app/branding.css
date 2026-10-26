@@ -24,7 +24,8 @@
 .auth > .brand.brand-logo {
   display: flex;
   width: fit-content;
-  margin: 0 auto;
+  /* Override the shared .brand margin reset, which uses !important. */
+  margin: 0 auto !important;
 }
 
 .auth section {
