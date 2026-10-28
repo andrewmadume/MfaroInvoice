@@ -40,3 +40,30 @@
   width: 6rem;
   height: auto;
 }
+
+.nav,
+.app-nav {
+  background: rgb(100, 149, 237);
+}
+
+.app-nav nav a {
+  color: #061b6b;
+  padding: 8px 10px;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.app-nav nav a[aria-current="page"] {
+  background: rgb(255, 210, 26);
+  color: #061b6b;
+  font-weight: 700;
+}
+
+.app-nav nav a:focus-visible {
+  outline: 2px solid #061b6b;
+  outline-offset: 3px;
+}
+
+.app-nav .business-name {
+  color: #061b6b;
+}
