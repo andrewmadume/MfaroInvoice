@@ -43,18 +43,20 @@
 
 .nav,
 .app-nav {
-  background: rgb(100, 149, 237);
+  background: #B4D4F7;
 }
 
 .app-nav nav a {
   color: #061b6b;
   padding: 8px 10px;
+  border-bottom: 3px solid transparent;
   border-radius: 8px;
   text-decoration: none;
 }
 
 .app-nav nav a[aria-current="page"] {
-  background: rgb(255, 210, 26);
+  background: transparent;
+  border-bottom-color: rgb(0, 168, 107);
   color: #061b6b;
   font-weight: 700;
 }
