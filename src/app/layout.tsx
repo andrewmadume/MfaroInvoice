@@ -7,10 +7,10 @@ import { RegisterServiceWorker } from "@/components/register-service-worker";
 export const metadata: Metadata = {
   title: "MfaroInvoice | Your Business. Your Invoices. Your Growth.",
   description: "Professional invoicing and business management for African businesses.",
-  manifest: "/manifest.webmanifest?v=20261026",
+  manifest: "/manifest.webmanifest?v=20261028",
   icons: {
-    icon: [{ url: "/MfaroInvoice-icon.svg?v=20261026", type: "image/svg+xml" }, { url: "/favicon.png?v=20261026", sizes: "48x48", type: "image/png" }],
-    apple: [{ url: "/apple-touch-icon.png?v=20261026", sizes: "180x180", type: "image/png" }],
+    icon: [{ url: "/icons/favicon-v2.png", sizes: "48x48", type: "image/png" }],
+    apple: [{ url: "/icons/apple-touch-v2.png", sizes: "180x180", type: "image/png" }],
   },
 };
 
