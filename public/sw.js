@@ -1,5 +1,5 @@
-const CACHE = "mfaro-public-assets-v5-icons-20261028";
-const ASSETS = ["/MfaroInvoice-logo.svg?v=20261026", "/icons/app-192-v2.png", "/icons/app-512-v2.png", "/icons/apple-touch-v2.png", "/icons/favicon-v2.png"];
+const CACHE = "mfaro-public-assets-v6-icons-20261028";
+const ASSETS = ["/MfaroInvoice-logo.svg?v=20261026", "/icons/app-192-v3.png", "/icons/app-512-v3.png", "/icons/app-maskable-512-v3.png", "/icons/apple-touch-v3.png", "/icons/favicon-v3.png"];
 const STATIC_PATHS = new Set(ASSETS.map((asset) => asset.split("?")[0]));
 self.addEventListener("install", (event) => event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS))));
 self.addEventListener("activate", (event) => event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)))).then(() => self.clients.claim())));
