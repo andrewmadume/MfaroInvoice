@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { InstallAppButton } from "@/components/install-app-button";
 import { BrandLogo } from "@/components/brand-logo";
 
-const entries = [["Overview", ""], ["Invoices", "/invoices"], ["Quotes", "/quotes"], ["Recurring", "/recurring"], ["Clients", "/clients"], ["Inventory", "/inventory"], ["Time", "/time"], ["Documents", "/documents"], ["Reports", "/reports"], ["Analytics", "/analytics"], ["Payments", "/payments"], ["Sync", "/sync"], ["Security", "/security"], ["Settings", "/settings"]];
+const entries = [["Overview", ""], ["Invoices", "/invoices"], ["Quotes", "/quotes"], ["Recurring", "/recurring"], ["Clients", "/clients"], ["Inventory", "/inventory"], ["Time", "/time"], ["Documents", "/documents"], ["Reports", "/reports"], ["Analytics", "/analytics"], ["Payments", "/payments"], ["Sync", "/sync"], ["Security", "/security"], ["Templates & settings", "/settings"]];
 
 export function BusinessNav({ businessId, name }: { businessId: string; name: string }) {
   const pathname = usePathname();
