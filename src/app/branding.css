@@ -1,0 +1,71 @@
+.brand.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  line-height: 0;
+}
+
+.brand-logo-image {
+  width: 10rem;
+  height: auto;
+  object-fit: contain;
+}
+
+.brand-logo-image-compact {
+  width: 7rem;
+  height: auto;
+}
+
+.auth .brand-logo-image-compact {
+  width: 14rem;
+  max-width: 65vw;
+}
+
+.auth > .brand.brand-logo {
+  display: flex;
+  width: fit-content;
+  /* Override the shared .brand margin reset, which uses !important. */
+  margin: 0 auto !important;
+}
+
+.auth section {
+  margin: 28px auto;
+}
+
+.nav .brand-logo-image-compact {
+  width: 5rem;
+}
+
+.app-nav .brand-logo-image-compact {
+  width: 6rem;
+  height: auto;
+}
+
+.nav,
+.app-nav {
+  background: #B4D4F7;
+}
+
+.app-nav nav a {
+  color: #061b6b;
+  padding: 8px 10px;
+  border-bottom: 3px solid transparent;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.app-nav nav a[aria-current="page"] {
+  background: transparent;
+  border-bottom-color: rgb(0, 168, 107);
+  color: #061b6b;
+  font-weight: 700;
+}
+
+.app-nav nav a:focus-visible {
+  outline: 2px solid #061b6b;
+  outline-offset: 3px;
+}
+
+.app-nav .business-name {
+  color: #061b6b;
+}

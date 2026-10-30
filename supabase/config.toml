@@ -1,0 +1,5 @@
+# Authentication is checked by the shared scheduler-secret guard in each handler.
+[functions.automation-dispatcher]
+verify_jwt = false
+[functions.reminder-dispatcher]
+verify_jwt = false
