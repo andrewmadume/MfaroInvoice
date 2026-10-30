@@ -3,8 +3,9 @@ import { z } from "zod";
 export const invoiceTemplates = [
   { id: "classic", name: "Mfaro Classic", description: "A blue-led business header, clear billing details and a structured totals panel." },
   { id: "minimal", name: "Mfaro Minimal", description: "A quiet, spacious layout with a slim brand accent and simple headings." },
+  { id: "letterhead", name: "Mfaro Letterhead", description: "A full-width letterhead, soft blue table headings and a pale green balance panel." },
 ] as const;
-export const templateId = z.enum(["classic", "minimal"]);
+export const templateId = z.enum(["classic", "minimal", "letterhead"]);
 const text = (max: number) => z.string().trim().max(max).default("");
 export const numberFormat = z.string().max(80).refine(value => {
   const rest = value.replace(/\{(prefix|year|month|number)\}/g, "");

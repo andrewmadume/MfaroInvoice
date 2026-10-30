@@ -131,6 +131,11 @@ test("migration chain and financial/security regression scenarios", async () => 
     await session(alpha,'authenticated','aal2');
     const large=await scalar("select public.create_invoice($1,$2,null,null,$3::jsonb)",[businessA,clientA,items]);
     assert.ok((await scalar("select invoice_number from public.invoices where id=$1",[large])).endsWith('/1000001'));
+    await db.query("update public.businesses set invoice_design=jsonb_set(invoice_design,'{template}',to_jsonb('letterhead'::text)) where id=$1",[businessA]);
+    const letterhead=await scalar("select public.create_invoice_with_design($1,$2,null,null,$3::jsonb,'letterhead')",[businessA,clientA,items]);
+    assert.equal(await scalar("select brand_snapshot #>> '{invoice_design,template}' from public.invoices where id=$1",[letterhead]),'letterhead');
+    await scalar("select public.refresh_draft_invoice_design($1,'letterhead')",[letterhead]);
+    await denied("select public.refresh_draft_invoice_design($1,'unsupported')",[letterhead]);
     const logoPath=businessA+'/33333333-3333-4333-8333-333333333333.png';
     await db.query("insert into storage.objects(bucket_id,name) values('business-logos',$1)",[logoPath]);
     assert.equal(Number(await scalar("select count(*) from storage.objects where name=$1",[logoPath])),1);
