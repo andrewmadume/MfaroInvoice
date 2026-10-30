@@ -1,0 +1,40 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useFormStatus } from "react-dom";
+import { updateBusinessProfile } from "@/app/app/actions";
+import { InvoiceDocument } from "@/components/invoice-document";
+import { invoiceTemplates, numberFormat, previewInvoiceNumber, type InvoiceBrand } from "@/lib/invoice-design";
+
+export type BusinessSettings = InvoiceBrand & {
+  id: string; invoicePrefix: string; numberFormat: string; numberDigits: number;
+  countryCode: string; defaultTaxRate: number; currency: string;
+};
+function SaveButton() { const { pending } = useFormStatus(); return <button className="button" disabled={pending}>{pending ? "Saving…" : "Save business and invoice settings"}</button>; }
+export function InvoiceSettingsForm({ business, logoUrl, previewDate }: { business: BusinessSettings; logoUrl?: string; previewDate: string }) {
+  const [preview, setPreview] = useState(business);
+  const [logo, setLogo] = useState(logoUrl);
+  const [removeLogo, setRemoveLogo] = useState(false);
+  useEffect(() => {
+    return () => { if (logo?.startsWith("blob:")) URL.revokeObjectURL(logo); };
+  }, [logo]);
+  function refresh(form: HTMLFormElement) {
+    const values = Object.fromEntries(new FormData(form));
+    const string = (key: string) => String(values[key] ?? "");
+    setPreview({ ...business, name: string("name"), legalName: string("legalName"), email: string("email"), phone: string("phone"), address: string("address"), taxNumber: string("taxNumber"), taxName: string("taxName"), invoicePrefix: string("invoicePrefix"), numberFormat: string("numberFormat"), numberDigits: Number(values.numberDigits), defaultTaxRate: Number(values.defaultTaxRate), design: { ...business.design, ...Object.fromEntries(Object.keys(business.design).filter(key => key !== "logoPath").map(key => [key, string(key)])) } });
+  }
+  const validFormat = numberFormat.safeParse(preview.numberFormat).success;
+  const number = validFormat ? previewInvoiceNumber(preview.numberFormat, preview.invoicePrefix, preview.numberDigits, 1, new Date(previewDate)) : "Invalid number format";
+  const field = (name: string, label: string, value: string | null | undefined, maxLength = 160, type = "text") => <label key={name}>{label}<input name={name} type={type} defaultValue={value ?? ""} maxLength={maxLength} /></label>;
+  return <div className="invoice-studio"><section className="form-card invoice-settings"><form action={updateBusinessProfile} onChange={event => refresh(event.currentTarget)}>
+    <input type="hidden" name="businessId" value={business.id} />
+    <fieldset><legend>Choose your invoice template</legend><div className="template-choices">{invoiceTemplates.map(template => <label key={template.id} className={`template-choice${preview.design.template === template.id ? " selected" : ""}`}><input name="template" type="radio" value={template.id} defaultChecked={business.design.template === template.id} /><strong>{template.name}</strong><span>{template.description}</span></label>)}</div></fieldset>
+    <fieldset><legend>Business identity</legend><label>Business name<input name="name" defaultValue={business.name} required minLength={2} maxLength={160} /></label>{field("legalName", "Legal name", business.legalName)}<label>Organisation logo<input name="logo" type="file" accept="image/png,image/jpeg,image/webp" onChange={event => { const file = event.target.files?.[0]; setRemoveLogo(false); setLogo(file ? URL.createObjectURL(file) : logoUrl); }} /><small>PNG, JPEG or WebP, up to 2 MB. Use a clear logo on a transparent or white background.</small></label><label className="inline-check"><input type="checkbox" name="removeLogo" value="true" checked={removeLogo} onChange={event => { setRemoveLogo(event.target.checked); if (event.target.checked) { setLogo(undefined); } else setLogo(logoUrl); }} /> Remove saved logo</label><div className="form-grid">{field("email", "Business email", business.email, 254, "email")}{field("phone", "Phone", business.phone, 60)}{field("website", "Website", business.design.website, 200)}{field("taxNumber", "Tax registration number", business.taxNumber, 120)}</div><label>Business address<textarea name="address" defaultValue={business.address ?? ""} rows={3} maxLength={1000} /></label></fieldset>
+    <fieldset><legend>Brand colours</legend><div className="form-grid"><label>Accent / header colour<input name="accent" type="color" defaultValue={business.design.accent} /></label><label>Invoice background<input name="background" type="color" defaultValue={business.design.background} /></label></div><small>Text automatically switches between light and dark for readability.</small></fieldset>
+    <fieldset><legend>Invoice numbering</legend><label>Prefix<input name="invoicePrefix" defaultValue={business.invoicePrefix} pattern="[A-Z0-9-]{1,12}" maxLength={12} required /></label><label>Number format<input name="numberFormat" defaultValue={business.numberFormat} maxLength={80} required aria-describedby="number-format-help" /></label><p id="number-format-help">Use {"{number}"} once. Optional: {"{prefix}"}, {"{year}"}, {"{month}"}. Example: {"{prefix}/{year}/{number}"}.</p><label>Minimum sequence digits<select name="numberDigits" defaultValue={business.numberDigits}>{[3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}</option>)}</select></label><p role={validFormat ? undefined : "alert"}>Example: <strong>{number}</strong></p><small>Applies to new invoices. The sequence continues and never resets when the format changes. Existing invoice numbers are retained.</small></fieldset>
+    <fieldset><legend>Banking details</legend><div className="form-grid">{field("bankName", "Bank", business.design.bankName)}{field("accountName", "Account holder", business.design.accountName)}{field("accountNumber", "Account number / IBAN", business.design.accountNumber, 80)}{field("branchCode", "Branch / routing code", business.design.branchCode, 80)}{field("accountType", "Account type", business.design.accountType, 80)}{field("swiftCode", "SWIFT / BIC", business.design.swiftCode, 80)}</div><label>Payment instructions<textarea name="paymentInstructions" rows={3} maxLength={2000} defaultValue={business.design.paymentInstructions} /></label></fieldset>
+    <fieldset><legend>Terms and footer</legend><label>Default payment terms<textarea name="terms" rows={3} maxLength={2000} defaultValue={business.design.terms} /></label>{field("footer", "Footer message", business.design.footer, 240)}</fieldset>
+    <fieldset><legend>Tax and location</legend><div className="form-grid"><label>Country<select name="countryCode" defaultValue={business.countryCode}>{[["ZA","South Africa"],["ZW","Zimbabwe"],["KE","Kenya"],["NG","Nigeria"],["GH","Ghana"],["UG","Uganda"],["TZ","Tanzania"],["ZM","Zambia"]].map(([value,label]) => <option value={value} key={value}>{label}</option>)}</select></label><label>Tax label<input name="taxName" defaultValue={business.taxName || "VAT"} minLength={2} maxLength={40} required /></label><label>Default tax rate %<input name="defaultTaxRate" type="number" min="0" max="100" step="0.01" defaultValue={business.defaultTaxRate} required /></label></div></fieldset>
+    <p className="notice">Saved settings apply to new invoices. Each new invoice keeps a copy of its business details and design.</p><SaveButton />
+  </form></section><aside className="invoice-live-preview"><div className="preview-label"><strong>Live preview</strong><span>Sample amounts · not a real invoice</span></div><InvoiceDocument logoUrl={removeLogo ? undefined : logo} brand={preview} invoice={{ number, status: "draft", issued: previewDate, due: null, currency: business.currency, subtotal: 2500, discount: 0, tax: 2500 * preview.defaultTaxRate / 100, total: 2500 * (1 + preview.defaultTaxRate / 100), paid: 0, client: { name: "Example client", address: "123 Client Street\nJohannesburg", email: "client@example.com", phone: "+27 10 000 0000" }, items: [{ id: "sample", description: "Professional services", quantity: 1, rate: 2500, taxRate: preview.defaultTaxRate, total: 2500 * (1 + preview.defaultTaxRate / 100) }] }} /></aside></div>;
+}

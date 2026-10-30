@@ -54,3 +54,14 @@ test("exports continue when API caps a page below the requested size", async () 
   assert.deepEqual(actual,records);
   await assert.rejects(allRows(async()=>({data:null,error:{message:"database error"}})),/Unable to load/);
 });
+
+
+test("invoice formats reject unknown tokens and retain long sequences", async () => {
+  const { numberFormat, previewInvoiceNumber, contrastingText, designSchema } = await import("../src/lib/invoice-design.ts");
+  assert.equal(numberFormat.safeParse("{prefix}/{year}/{month}/{number}").success,true);
+  for (const value of ["{number}{number}","{unknown}-{number}","<script>{number}","INV"]) assert.equal(numberFormat.safeParse(value).success,false);
+  assert.equal(previewInvoiceNumber("{prefix}/{year}/{month}/{number}","MF",3,1000001,new Date("2026-10-30")),"MF/2026/10/1000001");
+  assert.equal(contrastingText("#ffffff"),"#172033");
+  assert.equal(contrastingText("#061b6b"),"#ffffff");
+  assert.equal(designSchema.safeParse({accent:"red;display:none"}).success,false);
+});

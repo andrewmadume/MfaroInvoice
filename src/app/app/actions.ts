@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import sharp from "sharp";
+import { designSchema, numberFormat, templateId } from "@/lib/invoice-design";
 
 const uuid = z.string().uuid();
 const itemSchema = z.object({ description: z.string().trim().min(1).max(500), quantity: z.coerce.number().positive().max(1_000_000), unitPrice: z.coerce.number().min(0).max(1_000_000_000), discountAmount: z.coerce.number().min(0).max(1_000_000_000).default(0), taxRate: z.coerce.number().min(0).max(100).default(0) });
@@ -15,10 +17,37 @@ function businessPath(businessId: string, suffix = "") { return `/app/${business
 export async function updateBusinessProfile(formData: FormData) {
   const parsed = z.object({ businessId: uuid, name: z.string().trim().min(2).max(160), legalName: z.string().trim().max(160), email: z.union([z.literal(""), z.string().trim().email().max(254)]), phone: z.string().trim().max(60), address: z.string().trim().max(1_000), taxNumber: z.string().trim().max(120), invoicePrefix: z.string().trim().toUpperCase().regex(/^[A-Z0-9-]{1,12}$/), countryCode: z.string().regex(/^[A-Z]{2}$/), taxName: z.string().trim().min(2).max(40), defaultTaxRate: z.coerce.number().min(0).max(100) }).safeParse(Object.fromEntries(formData));
   if (!parsed.success) failure("/app");
+  const path = businessPath(parsed.data.businessId, "/settings");
+  const design = designSchema.safeParse(Object.fromEntries(formData));
+  const numbering = z.object({ numberFormat, numberDigits: z.coerce.number().int().min(3).max(10) }).safeParse(Object.fromEntries(formData));
+  if (!design.success || !numbering.success) failure(path);
   const supabase = await createClient();
-  const { error } = await supabase.from("businesses").update({ name: parsed.data.name, legal_name: parsed.data.legalName || null, email: parsed.data.email || null, phone: parsed.data.phone || null, address: parsed.data.address || null, tax_number: parsed.data.taxNumber || null, invoice_prefix: parsed.data.invoicePrefix, country_code: parsed.data.countryCode, tax_name: parsed.data.taxName, default_tax_rate: parsed.data.defaultTaxRate }).eq("id", parsed.data.businessId);
-  if (error) failure(businessPath(parsed.data.businessId, "/settings"));
-  revalidatePath(businessPath(parsed.data.businessId));
+  const { data: allowed, error: permissionError } = await supabase.rpc("has_permission", { target_business: parsed.data.businessId, required_permission: "settings.manage" });
+  if (permissionError || !allowed) failure(path);
+  const { data: existing, error: loadError } = await supabase.from("businesses").select("invoice_design").eq("id", parsed.data.businessId).single();
+  if (loadError || !existing) failure(path);
+  // Ignore any user-supplied storage path. Only keep the saved path or one uploaded here.
+  design.data.logoPath = typeof existing.invoice_design?.logoPath === "string" ? existing.invoice_design.logoPath : "";
+  if (formData.get("removeLogo") === "true") design.data.logoPath = "";
+  const file = formData.get("logo");
+  if (file instanceof File && file.size > 0 && formData.get("removeLogo") !== "true") {
+    if (file.size > 2_097_152 || !["image/png", "image/jpeg", "image/webp"].includes(file.type)) redirect(`${path}?error=logo`);
+    let image: Buffer;
+    try {
+      const source = Buffer.from(await file.arrayBuffer());
+      const metadata = await sharp(source, { limitInputPixels: 16_000_000 }).metadata();
+      if (!["png", "jpeg", "webp"].includes(metadata.format || "")) throw new Error("Invalid logo");
+      image = await sharp(source, { limitInputPixels: 16_000_000 }).rotate().resize(800,800,{fit:"inside",withoutEnlargement:true}).png().toBuffer();
+    } catch { redirect(`${path}?error=logo`); }
+    if (image.length > 2_097_152) redirect(`${path}?error=logo`);
+    const storagePath = `${parsed.data.businessId}/${crypto.randomUUID()}.png`;
+    const { error: uploadError } = await supabase.storage.from("business-logos").upload(storagePath, image, { contentType: "image/png", upsert: false });
+    if (uploadError) redirect(`${path}?error=logo-upload`);
+    design.data.logoPath = storagePath;
+  }
+  const { data: updated, error } = await supabase.from("businesses").update({ name: parsed.data.name, legal_name: parsed.data.legalName || null, email: parsed.data.email || null, phone: parsed.data.phone || null, address: parsed.data.address || null, tax_number: parsed.data.taxNumber || null, invoice_prefix: parsed.data.invoicePrefix, country_code: parsed.data.countryCode, tax_name: parsed.data.taxName, default_tax_rate: parsed.data.defaultTaxRate, invoice_design: design.data, invoice_number_format: numbering.data.numberFormat, invoice_number_digits: numbering.data.numberDigits }).eq("id", parsed.data.businessId).select("id").single();
+  if (error || !updated) failure(path);
+  revalidatePath(businessPath(parsed.data.businessId), "layout");
   redirect(businessPath(parsed.data.businessId, "/settings?saved=1"));
 }
 
@@ -42,10 +71,24 @@ export async function createInvoice(formData: FormData) {
   const parsed = await parseDocumentInput(formData);
   if (!parsed) failure("/app");
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("create_invoice", { p_business_id: parsed.businessId, p_client_id: parsed.clientId, p_due_date: parsed.dueDate || null, p_notes: parsed.notes || null, p_items: parsed.items });
+  const chosenTemplate = templateId.safeParse(formData.get("template"));
+  if (!chosenTemplate.success) failure(businessPath(parsed.businessId, "/invoices/new"));
+  const { data, error } = await supabase.rpc("create_invoice_with_design", { p_business_id: parsed.businessId, p_client_id: parsed.clientId, p_due_date: parsed.dueDate || null, p_notes: parsed.notes || null, p_items: parsed.items, p_template_id: chosenTemplate.data });
   if (error || !data) failure(businessPath(parsed.businessId, "/invoices/new"));
   revalidatePath(businessPath(parsed.businessId));
   redirect(businessPath(parsed.businessId, `/invoices/${data}`));
+}
+
+export async function refreshDraftInvoiceDesign(formData: FormData) {
+  const parsed = z.object({ businessId: uuid, invoiceId: uuid, template: templateId }).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) failure("/app");
+  const supabase = await createClient();
+  // Resolve under this tenant before invoking the permission-checked, draft-only RPC.
+  const { data: invoice } = await supabase.from("invoices").select("id").eq("id", parsed.data.invoiceId).eq("business_id", parsed.data.businessId).maybeSingle();
+  if (!invoice) failure(businessPath(parsed.data.businessId, "/invoices"));
+  const { error } = await supabase.rpc("refresh_draft_invoice_design", { p_invoice_id: parsed.data.invoiceId, p_template_id: parsed.data.template });
+  if (error) failure(businessPath(parsed.data.businessId, `/invoices/${parsed.data.invoiceId}`));
+  revalidatePath(businessPath(parsed.data.businessId, `/invoices/${parsed.data.invoiceId}`));
 }
 
 export async function createQuote(formData: FormData) {
