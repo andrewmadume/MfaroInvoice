@@ -63,5 +63,7 @@ test("invoice formats reject unknown tokens and retain long sequences", async ()
   assert.equal(previewInvoiceNumber("{prefix}/{year}/{month}/{number}","MF",3,1000001,new Date("2026-10-30")),"MF/2026/10/1000001");
   assert.equal(contrastingText("#ffffff"),"#172033");
   assert.equal(contrastingText("#061b6b"),"#ffffff");
+  assert.equal(designSchema.safeParse({template:"letterhead"}).success,true);
+  assert.equal(designSchema.safeParse({template:"unsupported"}).success,false);
   assert.equal(designSchema.safeParse({accent:"red;display:none"}).success,false);
 });

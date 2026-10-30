@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- business logos use private signed URLs and local previews. */
 import type { CSSProperties } from "react";
 import { formatMoney } from "@/lib/finance";
-import { contrastingText, type InvoiceBrand } from "@/lib/invoice-design";
+import { contrastingText, invoiceTemplates, type InvoiceBrand } from "@/lib/invoice-design";
 
 export type InvoiceDocumentData = {
   number: string; status: string; issued: string; due: string | null; currency: string;
@@ -13,7 +13,7 @@ export function InvoiceDocument({ brand, invoice, logoUrl }: { brand: InvoiceBra
   const { design } = brand;
   const money = (n: number) => formatMoney(n, invoice.currency);
   const style = { "--invoice-accent": design.accent, "--invoice-accent-text": contrastingText(design.accent), "--invoice-background": design.background, "--invoice-ink": contrastingText(design.background) } as CSSProperties;
-  return <article className={`invoice-paper invoice-template invoice-${design.template}`} style={style} aria-label={`${design.template === "classic" ? "Mfaro Classic" : "Mfaro Minimal"} invoice`}>
+  return <article className={`invoice-paper invoice-template invoice-${design.template}`} style={style} aria-label={`${invoiceTemplates.find(template => template.id === design.template)?.name || "Mfaro Classic"} invoice`}>
     <header className="invoice-heading"><div className="invoice-identity">{logoUrl && <img className="business-invoice-logo" src={logoUrl} alt={`${brand.name} logo`} />}<div><h2>{brand.name}</h2>{brand.legalName && brand.legalName !== brand.name && <p>{brand.legalName}</p>}<p className="preserve-lines">{brand.address}</p><p>{[brand.email, brand.phone].filter(Boolean).join(" · ")}</p>{design.website && <p>{design.website}</p>}{brand.taxNumber && <p>{brand.taxName || "Tax"} registration: {brand.taxNumber}</p>}</div></div><div className="invoice-heading-label"><h3>INVOICE</h3><strong>{invoice.number}</strong><span className="invoice-status">{invoice.status}</span></div></header>
     <div className="invoice-parties"><section><h4>Bill to</h4><strong>{invoice.client.name}</strong><p className="preserve-lines">{invoice.client.address}</p><p>{invoice.client.email}</p><p>{invoice.client.phone}</p></section><dl><div><dt>Invoice date</dt><dd>{invoice.issued}</dd></div><div><dt>Due date</dt><dd>{invoice.due || "On receipt"}</dd></div><div><dt>Currency</dt><dd>{invoice.currency}</dd></div></dl></div>
     <div className="invoice-items-wrap"><table className="invoice-items"><thead><tr><th>Description</th><th>Qty</th><th>Unit price</th><th>{brand.taxName || "Tax"} %</th><th className="align-right">Amount</th></tr></thead><tbody>{invoice.items.map(item => <tr key={item.id}><td className="preserve-lines">{item.description}</td><td>{item.quantity}</td><td>{money(item.rate)}</td><td>{item.taxRate}%</td><td className="align-right">{money(item.total)}</td></tr>)}</tbody></table></div>
