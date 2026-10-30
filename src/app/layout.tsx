@@ -3,6 +3,7 @@ import "./globals.css";
 import "./phase3.css";
 import "./branding.css";
 import "./invoice-templates.css";
+import "./expenses.css";
 import { RegisterServiceWorker } from "@/components/register-service-worker";
 
 export const metadata: Metadata = {

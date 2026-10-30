@@ -1,5 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+
+test("expense invoice uploads validate content headers and allowed file types", async () => {
+  const { expenseFileInfo, validExpenseHeader, expenseSchema } = await import("../src/lib/expenses.ts");
+  assert.equal(expenseFileInfo("receipt.JPEG","image/jpeg").extension,"jpg");
+  assert.equal(expenseFileInfo("invoice.pdf","" ).type,"application/pdf");
+  assert.equal(expenseFileInfo("script.svg","image/svg+xml"),null);
+  assert.equal(expenseFileInfo("invoice.pdf","image/png"),null);
+  assert.equal(validExpenseHeader(new TextEncoder().encode("%PDF-1.7"),"application/pdf"),true);
+  assert.equal(validExpenseHeader(new TextEncoder().encode("<html>bad"),"application/pdf"),false);
+  assert.equal(validExpenseHeader(new Uint8Array([137,80,78,71,13,10,26,10]),"image/png"),true);
+  assert.equal(expenseSchema.safeParse({amount:-1}).success,false);
+});
 import { csvCell, currencyDecimals, formatMoney } from "../src/lib/finance.ts";
 import { allRows } from "../src/lib/queries.ts";
 import { copySessionResponse } from "../src/lib/session-response.ts";
