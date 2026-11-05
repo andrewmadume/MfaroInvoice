@@ -3,31 +3,49 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "npm run build:workspace && next dev",
+    "build": "npm run build:workspace && next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:tenant": "node --test scripts/tenant-isolation.test.mjs",
-    "test": "node --experimental-strip-types --test scripts/finance.test.mjs scripts/database.test.mjs"
+    "test": "node --experimental-strip-types --test scripts/finance.test.mjs scripts/database.test.mjs && npm run test:offline",
+    "build:workspace": "node scripts/build-workspace.mjs",
+    "desktop:dev": "npm run build:workspace && electron .",
+    "desktop:pack": "npm run build:workspace && electron-builder --dir",
+    "desktop:dist": "npm run build:workspace && electron-builder --publish never",
+    "test:offline": "node scripts/offline.test.mjs",
+    "test:browser": "npm run build:workspace && node scripts/browser-offline.test.mjs"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.7.0",
-    "@supabase/supabase-js": "^2.49.1",
-    "next": "^16.0.0",
+    "@supabase/ssr": "0.7.0",
+    "@supabase/supabase-js": "2.116.0",
+    "decimal.js": "10.6.0",
+    "next": "16.4.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "sharp": "0.35.4",
-    "zod": "^3.24.2"
+    "sharp": "0.35.5",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.10",
     "@eslint/eslintrc": "^3.2.0",
+    "@playwright/test": "1.64.1",
     "@types/node": "^22.13.4",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
+    "electron": "45.2.3",
+    "electron-builder": "26.18.0",
+    "esbuild-wasm": "0.28.2",
     "eslint": "^9.19.0",
-    "eslint-config-next": "^16.0.0",
+    "eslint-config-next": "16.4.5",
+    "fake-indexeddb": "6.2.7",
     "typescript": "^5.7.3"
-  }
+  },
+  "main": "desktop/main.cjs",
+  "overrides": {
+    "source-map-js": "1.2.2"
+  },
+  "description": "MfaroInvoice shared PWA and offline desktop invoice workspace",
+  "author": "MfaroInvoice"
 }

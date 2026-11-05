@@ -8,6 +8,10 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      # Build-only fixture values: no credentials or production backend access.
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: public-build-fixture
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,6 +23,8 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x

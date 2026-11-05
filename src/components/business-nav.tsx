@@ -14,5 +14,5 @@ export function BusinessNav({ businessId, name }: { businessId: string; name: st
     const href = `${basePath}${suffix}`;
     const active = pathname === href || (suffix !== "" && pathname.startsWith(`${href}/`));
     return <Link key={label} href={href} aria-current={active ? "page" : undefined}>{label}</Link>;
-  })}</nav><InstallAppButton /><span className="business-name">{name}</span></header>;
+  })}<a href="/offline/index.html">Device workspace</a></nav><InstallAppButton /><span className="business-name">{name}</span></header>;
 }
