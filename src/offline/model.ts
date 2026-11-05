@@ -47,6 +47,7 @@ export const draftSchema = z.object({
 export type Line = z.infer<typeof lineSchema>;
 export type Kind = "clients" | "products" | "invoices";
 export type State =
+  | "Not saved"
   | "Saved on this device"
   | "Pending sync"
   | "Synced"

@@ -31,7 +31,17 @@ export async function transaction<T>(
   const db = await openStore();
   try {
     return await new Promise<T>((resolve, reject) => {
-      const t = db.transaction(names, mode);
+      let t: IDBTransaction;
+      try {
+        t = db.transaction(
+          names,
+          mode,
+          mode === "readwrite" ? { durability: "strict" } : undefined,
+        );
+      } catch (error) {
+        if (!(error instanceof TypeError)) throw error;
+        t = db.transaction(names, mode);
+      }
       let value: T;
       t.oncomplete = () => resolve(value);
       t.onabort = t.onerror = () =>

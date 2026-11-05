@@ -72,6 +72,7 @@ function Editor({
     ["Pending sync", "Sync failed", "Conflict"].includes(row.state) ||
     (row.kind === "invoices" && row.version > 0 && row.data.status !== "draft");
   function change(patch: RecordData) {
+    setMessage("Saving edits on this device…");
     saveRevision.current++;
     setData((d) => ({ ...d, ...patch }));
     setDirty(true);
@@ -108,6 +109,7 @@ function Editor({
     return () => clearTimeout(timer);
   }, [data, dirty, row]);
   async function save() {
+    setMessage("Saving…");
     try {
       await saveLocal(
         row.account,
@@ -873,7 +875,7 @@ function Workspace() {
                       kind,
                       id,
                       version: 0,
-                      state: "Saved on this device",
+                      state: "Not saved",
                       data:
                         kind === "invoices"
                           ? {

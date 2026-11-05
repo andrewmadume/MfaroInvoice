@@ -119,6 +119,10 @@ try {
   await page.getByRole("button", { name: "Customers", exact: true }).click();
   await page.getByRole("button", { name: "New customer", exact: true }).click();
   await page
+    .locator('.offline-editor [role="status"]')
+    .filter({ hasText: "Not saved" })
+    .waitFor();
+  await page
     .getByLabel("Customer name", { exact: true })
     .fill("Restart Customer");
   await page
