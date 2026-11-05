@@ -1,7 +1,8 @@
 import { spawn } from "node:child_process";
-import { mkdtemp, readFile } from "node:fs/promises";
+import { mkdtemp, readFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { createRequire } from "node:module";
+await mkdir("work", { recursive: true });
 const require = createRequire(import.meta.url),
   profile = await mkdtemp(path.resolve("work/desktop-smoke-")),
   report = path.join(profile, "report.json");

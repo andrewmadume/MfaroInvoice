@@ -45,6 +45,7 @@ const server = http.createServer(async (req, res) => {
 });
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
+await fs.mkdir("work", { recursive: true });
 const profile = await fs.mkdtemp(path.resolve("work/browser-offline-"));
 const options = {
   headless: true,
