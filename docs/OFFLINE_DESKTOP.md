@@ -1,5 +1,7 @@
 # MfaroInvoice: PWA and desktop workspace
 
+Version 0.1.1 opens the shared **Business overview** dashboard, using the same navigation and dashboard components as the PWA. Invoices, Clients and Inventory open saved local records; **Sync** opens the device controls. Navigation items marked ↗ open the selected organisation's online page in the default browser and require connectivity. Desktop totals describe downloaded records, not a live server aggregate. Backup, restore, organisation switching and logout are grouped under **Device & sync**. The application ID and IndexedDB names are unchanged, so installing this update does not intentionally clear existing local records.
+
 ## Architecture and scope
 
 The existing Next.js application, Supabase Auth, RLS, payment functions and server-rendered business modules remain in place. `src/offline/workspace.tsx` is a React renderer built into `public/offline/` for both the web PWA and Electron. It reuses the existing invoice renderer, three templates, branding and money formatting. `src/offline/model.ts` provides shared validation and decimal calculations. PostgreSQL recalculates amounts authoritatively on sync. Nothing depends on an Electron development server or the hosted site to render the device workspace.

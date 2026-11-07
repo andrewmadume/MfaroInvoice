@@ -116,7 +116,7 @@ try {
   await context.setOffline(true);
   await page.reload();
   await page.getByText("offline-test@example.test", { exact: true }).waitFor();
-  await page.getByRole("button", { name: "Customers", exact: true }).click();
+  await page.getByRole("button", { name: "Clients", exact: true }).click();
   await page.getByRole("button", { name: "New customer", exact: true }).click();
   await page
     .locator('.offline-editor [role="status"]')
@@ -137,15 +137,13 @@ try {
   await context.setOffline(true);
   const restarted = context.pages()[0];
   await restarted.goto(origin + "/offline/index.html");
-  await restarted
-    .getByRole("button", { name: "Customers", exact: true })
-    .click();
+  await restarted.getByRole("button", { name: "Clients", exact: true }).click();
   await restarted.getByText("Restart Customer", { exact: true }).waitFor();
   await restarted
-    .getByRole("button", { name: "Invoices", exact: true })
+    .getByRole("button", { name: "Overview", exact: true })
     .click();
   await restarted
-    .getByRole("button", { name: "New offline draft", exact: true })
+    .getByRole("button", { name: "Create invoice", exact: true })
     .click();
   await restarted
     .getByLabel("Customer", { exact: true })
@@ -179,6 +177,25 @@ try {
     .getByText(/Offline draft/)
     .first()
     .waitFor();
+  await restarted.screenshot({
+    path: "work/desktop-dashboard-aligned.png",
+    fullPage: true,
+  });
+  await restarted.setViewportSize({ width: 390, height: 844 });
+  assert.equal(
+    await restarted.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+    true,
+  );
+  await restarted.screenshot({
+    path: "work/desktop-dashboard-mobile.png",
+    fullPage: true,
+  });
+  await restarted.setViewportSize({ width: 1280, height: 720 });
+  await restarted
+    .getByRole("button", { name: "Invoices", exact: true })
+    .click();
   await restarted
     .getByRole("button", { name: "New offline draft", exact: true })
     .click();
@@ -209,7 +226,7 @@ try {
   assert.equal(recoveryRow, true);
   await restarted.goto(origin + "/app/offline-fallback");
   await restarted
-    .getByRole("heading", { name: "Device workspace", exact: true })
+    .getByRole("heading", { name: "Know what’s next.", exact: true })
     .waitFor();
   await restarted.goto(origin + "/offline/index.html");
   networkDisabled = false;
@@ -239,9 +256,7 @@ try {
   });
   restarted.once("dialog", (dialog) => void dialog.accept());
   await Promise.all([restarted.waitForEvent("load"), updateButton.click()]);
-  await restarted
-    .getByRole("heading", { name: "Device workspace", exact: true })
-    .waitFor();
+  await restarted.locator(".offline-workspace").waitFor();
   assert.deepEqual(errors, []);
   console.log(
     "PASS: Chrome headless offline launch, navigation fallback, persistent profile restart, customer/draft/queue persistence, tax totals, unfinished-edit recovery and update guard. Installed OS/PWA UI and physical printing are separate checks.",

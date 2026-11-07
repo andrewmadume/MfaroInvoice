@@ -38,6 +38,48 @@ await test("desktop session storage does not alias Supabase migration or verifie
 const store = require("../src/offline/storage.ts"),
   { syncQueue } = require("../src/offline/sync.ts"),
   model = require("../src/offline/model.ts");
+const { savedOverview } = require("../src/offline/overview.ts");
+await test("saved dashboard excludes drafts and deletions from outstanding and separates currencies", () => {
+  const row = (id, kind, data) => ({
+    id,
+    kind,
+    data,
+    state: "Synced",
+    account: "a",
+    business: "b",
+    key: id,
+    version: 1,
+  });
+  const data = [
+    row("client", "clients", { name: "Example" }),
+    row("sent", "invoices", {
+      client_id: "client",
+      invoice_number: "INV-1",
+      status: "sent",
+      total: 115,
+      amount_paid: 15,
+      currency_code: "ZAR",
+    }),
+    row("dollars", "invoices", {
+      invoice_number: "INV-2",
+      status: "overdue",
+      total: 20,
+      amount_paid: 0,
+      currency_code: "USD",
+    }),
+    row("draft", "invoices", { status: "draft", total: 999, amount_paid: 0 }),
+    {
+      ...row("deleted", "invoices", { status: "sent", total: 1000 }),
+      deleted: true,
+    },
+  ];
+  const summary = savedOverview(data, "ZAR");
+  assert.equal(summary.clientCount, 1);
+  assert.match(summary.outstanding, /ZAR\s*100\.00/);
+  assert.match(summary.outstanding, /USD\s*20\.00/);
+  assert.doesNotMatch(summary.outstanding, /999|1000/);
+  assert.equal(summary.invoices.find((i) => i.id === "sent").client, "Example");
+});
 const {
   allowedSender,
   allowedExternal,

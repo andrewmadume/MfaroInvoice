@@ -1,5 +1,11 @@
 # PWA / Electron upgrade verification
 
+## Dashboard alignment update — 7 November 2026
+
+Version 0.1.1 replaces the separate three-tab desktop landing screen with the shared PWA business navigation, Overview cards, recent-invoice table and Create invoice action. Device controls are grouped under Device & sync. A shared overview component is used by both the server-rendered PWA and the bundled renderer. Server-only areas remain explicitly marked as opening online; this update does not bundle the remaining Next.js server modules. No authentication, schema, invoice numbering or local database names were changed.
+
+The updated checks include 15 automated tests (including saved-dashboard currency separation and exclusion of draft/deleted balances), the existing offline/restart/update browser workflow, and a 390px viewport overflow check. Desktop and narrow-screen browser screenshots are captured by the browser test. Installer/runtime limitations below remain applicable; browser screenshots do not verify a native Electron launch.
+
 Date: 5 November 2026. Environment: Windows 11 host, Node 24; Chrome headless automation against an isolated localhost server and persistent test profile. No real customer documents or credentials were used.
 
 ## Implemented

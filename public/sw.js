@@ -1,4 +1,4 @@
-const CACHE = "mfaro-shell-8780237ed5defcb0";
+const CACHE = "mfaro-shell-cf95ce59efe333c9";
 const ASSETS = ["/offline/index.html", "/offline/workspace.js", "/offline/workspace.css", "/MfaroInvoice-logo.svg", "/icons/app-192-v3.png", "/icons/app-512-v3.png", "/icons/app-maskable-512-v3.png", "/icons/apple-touch-v3.png", "/icons/favicon-v3.png"];
 const PUBLIC = new Set(ASSETS);
 self.addEventListener("install",event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS))));

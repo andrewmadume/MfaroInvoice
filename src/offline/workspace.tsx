@@ -37,6 +37,10 @@ import {
   type Business,
 } from "./client";
 import { platform } from "./platform";
+import { ApplicationNavigation } from "../components/application-navigation";
+import { DashboardOverview } from "../components/dashboard-overview";
+import { businessNavigation } from "../lib/business-navigation";
+import { savedOverview } from "./overview";
 import { RegisterServiceWorker } from "../components/register-service-worker";
 import "../app/globals.css";
 import "../app/phase3.css";
@@ -429,6 +433,7 @@ function Workspace() {
     [business, setBusiness] = useState(""),
     [rows, setRows] = useState<LocalRecord[]>([]),
     [kind, setKind] = useState<Kind>("invoices"),
+    [view, setView] = useState<"overview" | Kind | "sync">("overview"),
     [editing, setEditing] = useState<LocalRecord>(),
     [message, setMessage] = useState("Opening device workspace…"),
     [online, setOnline] = useState(navigator.onLine),
@@ -461,7 +466,7 @@ function Workspace() {
         setCompanies(list);
         setBusiness(list[0]?.id || "");
         setMessage(
-          "Device workspace ready. Download records before working offline.",
+          "Your business overview is ready. Refresh records in Device & sync before working offline.",
         );
       } else setMessage("Sign in online before using this device offline.");
     };
@@ -650,249 +655,380 @@ function Workspace() {
       "Backup restored. Pending changes will retry with their original operation IDs.",
     );
   }
+  function navigate(next: "overview" | Kind | "sync") {
+    if (window.mfaroDirty) {
+      setMessage("Wait for your latest edits to finish saving on this device.");
+      return;
+    }
+    setEditing(undefined);
+    setView(next);
+    if (next !== "overview" && next !== "sync") setKind(next);
+  }
+  function newRecord(nextKind: Kind) {
+    if (!user || !company) return;
+    if (window.mfaroDirty) {
+      alert("Wait for your latest edits to finish saving on this device.");
+      return;
+    }
+    setKind(nextKind);
+    setView(nextKind);
+    const id = crypto.randomUUID();
+    setEditing({
+      key: JSON.stringify([user.id, business, nextKind, id]),
+      account: user.id,
+      business,
+      kind: nextKind,
+      id,
+      version: 0,
+      state: "Not saved",
+      data:
+        nextKind === "invoices"
+          ? {
+              client_id: "",
+              due_date: "",
+              notes: "",
+              template: readDesign(company.invoice_design).template,
+              items: [newLine(Number(company.default_tax_rate || 0))],
+            }
+          : nextKind === "clients"
+            ? { name: "", email: "", phone: "" }
+            : { name: "", unit_price: 0, tax_rate: 0 },
+    });
+  }
+  const overview = company
+    ? savedOverview(rows, company.currency_code)
+    : undefined;
+  const localViews: Record<string, "overview" | Kind | "sync"> = {
+    "": "overview",
+    "/invoices": "invoices",
+    "/clients": "clients",
+    "/inventory": "products",
+    "/sync": "sync",
+  };
   return (
-    <>
-      <header className="offline-nav">
-        <img src="/MfaroInvoice-logo.svg" alt="MfaroInvoice" />
-        {!window.mfaroDesktop && <a href="/">Home</a>}
-        {!window.mfaroDesktop && <a href="/app">Full online app</a>}
-        <strong>{online ? "Online" : "Offline"}</strong>
-        <button
-          onClick={() =>
-            void platform.external("https://mfaro-invoice.vercel.app/app")
-          }
-        >
-          Open online features
-        </button>
-      </header>
-      <main className="offline-workspace">
-        <p className="eyebrow">YOUR BUSINESS. YOUR INVOICES. YOUR GROWTH.</p>
-        <h1>Device workspace</h1>
-        <p role="status" aria-live="polite">
-          {message}
-        </p>
-        <p className="notice">
-          Records saved here are available to anyone using this device profile.
-          Local financial records and backups are not encrypted. Issuing
-          invoices and recording payments require the online app.
-        </p>
-        {!user ? (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              void action(async () => {
-                if (!navigator.onLine) throw new Error("Connect to sign in");
-                const { error } = await cloud.auth.signInWithPassword({
-                  email,
-                  password,
-                });
-                setPassword("");
-                if (error) throw error;
-                const factors = await cloud.auth.mfa.listFactors();
-                const factor = factors.data?.totp.find(
-                  (f) => f.status === "verified",
-                );
-                if (factor) {
-                  if (!/^\d{6}$/.test(otp))
-                    throw new Error(
-                      "Enter your six-digit authenticator code, then sign in again.",
-                    );
-                  const verified = await cloud.auth.mfa.challengeAndVerify({
-                    factorId: factor.id,
-                    code: otp,
-                  });
-                  setOtp("");
-                  if (verified.error) throw verified.error;
-                }
-                const u = await identity();
-                if (!u) throw new Error("Could not verify account");
-                const list = await businesses(u.id);
-                setUser(u);
-                setCompanies(list);
-                setBusiness(list[0]?.id || "");
-                setMessage("Signed in. Download your records for offline use.");
-              });
-            }}
+    <div className="app-shell">
+      <ApplicationNavigation
+        name={company?.name || "MfaroInvoice"}
+        brand={
+          <button
+            className="brand brand-logo desktop-brand"
+            aria-label="MfaroInvoice overview"
+            onClick={() => navigate("overview")}
           >
-            <label>
-              Email
-              <input
-                type="email"
-                autoComplete="username"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </label>
-            <label>
-              Password
-              <input
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </label>
-            <label>
-              Authenticator code (if enabled)
-              <input
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                maxLength={6}
-              />
-            </label>
-            <button disabled={busy}>Sign in</button>
-            <p>
-              First-time sign-in requires internet. Use the online app for
-              registration, MFA and account recovery.
-            </p>
-          </form>
-        ) : (
-          <>
-            <div className="offline-toolbar">
-              <span>{user.email}</span>
-              <label>
-                Organisation
-                <select
-                  value={business}
-                  onChange={(e) => {
-                    if (window.mfaroDirty) {
-                      alert(
-                        "Wait for your latest edits to finish saving on this device.",
-                      );
+            <img
+              className="brand-logo-image brand-logo-image-compact"
+              src="/MfaroInvoice-logo.svg"
+              alt="MfaroInvoice — Your Business. Your Invoices. Your Growth."
+            />
+          </button>
+        }
+        navigation={
+          user && company ? (
+            businessNavigation.map(([label, suffix]) => {
+              const local = localViews[suffix];
+              return (
+                <button
+                  type="button"
+                  key={label}
+                  aria-current={local === view ? "page" : undefined}
+                  title={
+                    local ? undefined : "Opens the online app in your browser"
+                  }
+                  onClick={() => {
+                    if (local) {
+                      navigate(local);
                       return;
                     }
-                    window.mfaroDirty = false;
-                    setBusiness(e.target.value);
-                    setRows([]);
-                    setEditing(undefined);
+                    void action(async () => {
+                      if (window.mfaroDirty)
+                        throw new Error(
+                          "Save your latest edits before opening another page.",
+                        );
+                      if (!navigator.onLine)
+                        throw new Error(
+                          "Connect to the internet to open this page.",
+                        );
+                      await platform.external(
+                        `https://mfaro-invoice.vercel.app/app/${encodeURIComponent(business)}${suffix}`,
+                      );
+                    });
                   }}
                 >
-                  {companies.map((b) => (
-                    <option value={b.id} key={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button
-                disabled={busy || !online}
-                onClick={() =>
-                  void action(async () => {
-                    await synchronize(user.id, business);
-                    await download(user.id, business);
-                    setCompanies(await businesses(user.id));
-                    setMessage(
-                      "Records downloaded. Pending local work has been preserved.",
-                    );
-                  })
-                }
-              >
-                Download / refresh records
-              </button>
-              <button
-                disabled={busy || !online}
-                onClick={() =>
-                  void action(async () => {
-                    await synchronize(user.id, business);
-                    setMessage(
-                      "Sync checked. Review each record’s state below.",
-                    );
-                  })
-                }
-              >
-                Sync now
-              </button>
-              <button disabled={busy} onClick={() => void action(backup)}>
-                Export backup
-              </button>
-              <button disabled={busy} onClick={() => void action(restore)}>
-                Restore backup
-              </button>
-              <button
-                disabled={busy}
-                onClick={() =>
-                  void action(async () => {
-                    if (
-                      !confirm(
-                        "Sign out and erase this account’s local records, pending changes and recovery edits? Export a backup first. Other devices and server records are unchanged.",
-                      )
-                    )
-                      return;
-                    setUser(undefined);
-                    setRows([]);
-                    setEditing(undefined);
-                    window.mfaroDirty = false;
-                    try {
-                      await cloud.auth.signOut({ scope: "local" });
-                    } finally {
-                      await clearAccount(user.id);
-                    }
-                  })
-                }
-              >
-                Sign out & erase local data
-              </button>
-            </div>
-            {company && (
-              <>
-                <nav className="offline-tabs" aria-label="Device workspace">
-                  {(["invoices", "clients", "products"] as Kind[]).map((k) => (
-                    <button
-                      key={k}
-                      aria-current={kind === k ? "page" : undefined}
-                      onClick={() => {
-                        setKind(k);
-                      }}
+                  {label}
+                  {!local && (
+                    <span
+                      className="desktop-external"
+                      aria-label="opens online"
                     >
-                      {k === "clients"
-                        ? "Customers"
-                        : k === "products"
-                          ? "Products & services"
+                      ↗
+                    </span>
+                  )}
+                </button>
+              );
+            })
+          ) : (
+            <button
+              type="button"
+              onClick={() =>
+                void platform.external("https://mfaro-invoice.vercel.app/app")
+              }
+            >
+              Open online app
+            </button>
+          )
+        }
+      />
+      <main className="offline-workspace">
+        <div className="desktop-session">
+          <span className={online ? "connection online" : "connection offline"}>
+            {online ? "Online" : "Offline"}
+          </span>
+          {user && <span>{user.email}</span>}
+          <p role="status" aria-live="polite">
+            {message}
+          </p>
+        </div>
+        {!user ? (
+          <section className="workspace desktop-sign-in">
+            <h1>Sign in</h1>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void action(async () => {
+                  if (!navigator.onLine) throw new Error("Connect to sign in");
+                  const { error } = await cloud.auth.signInWithPassword({
+                    email,
+                    password,
+                  });
+                  setPassword("");
+                  if (error) throw error;
+                  const factors = await cloud.auth.mfa.listFactors();
+                  const factor = factors.data?.totp.find(
+                    (f) => f.status === "verified",
+                  );
+                  if (factor) {
+                    if (!/^\d{6}$/.test(otp))
+                      throw new Error(
+                        "Enter your six-digit authenticator code, then sign in again.",
+                      );
+                    const verified = await cloud.auth.mfa.challengeAndVerify({
+                      factorId: factor.id,
+                      code: otp,
+                    });
+                    setOtp("");
+                    if (verified.error) throw verified.error;
+                  }
+                  const u = await identity();
+                  if (!u) throw new Error("Could not verify account");
+                  const list = await businesses(u.id);
+                  setUser(u);
+                  setCompanies(list);
+                  setBusiness(list[0]?.id || "");
+                  setMessage(
+                    "Signed in. Download your records for offline use.",
+                  );
+                });
+              }}
+            >
+              <label>
+                Email
+                <input
+                  type="email"
+                  autoComplete="username"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </label>
+              <label>
+                Password
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </label>
+              <label>
+                Authenticator code (if enabled)
+                <input
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  maxLength={6}
+                />
+              </label>
+              <button disabled={busy}>Sign in</button>
+              <p>
+                First-time sign-in requires internet. Use the online app for
+                registration, MFA and account recovery.
+              </p>
+            </form>
+          </section>
+        ) : (
+          <>
+            <details
+              className="device-tools"
+              open={view === "sync" ? true : undefined}
+            >
+              <summary>Device &amp; sync</summary>
+              <div className="offline-toolbar">
+                <label>
+                  Organisation
+                  <select
+                    value={business}
+                    onChange={(e) => {
+                      if (window.mfaroDirty) {
+                        alert(
+                          "Wait for your latest edits to finish saving on this device.",
+                        );
+                        return;
+                      }
+                      window.mfaroDirty = false;
+                      setBusiness(e.target.value);
+                      setRows([]);
+                      setEditing(undefined);
+                    }}
+                  >
+                    {companies.map((b) => (
+                      <option value={b.id} key={b.id}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  disabled={busy || !online}
+                  onClick={() =>
+                    void action(async () => {
+                      await synchronize(user.id, business);
+                      await download(user.id, business);
+                      setCompanies(await businesses(user.id));
+                      setMessage(
+                        "Records downloaded. Pending local work has been preserved.",
+                      );
+                    })
+                  }
+                >
+                  Download / refresh records
+                </button>
+                <button
+                  disabled={busy || !online}
+                  onClick={() =>
+                    void action(async () => {
+                      await synchronize(user.id, business);
+                      setMessage(
+                        "Sync checked. Review each record’s state below.",
+                      );
+                    })
+                  }
+                >
+                  Sync now
+                </button>
+                <button disabled={busy} onClick={() => void action(backup)}>
+                  Export backup
+                </button>
+                <button disabled={busy} onClick={() => void action(restore)}>
+                  Restore backup
+                </button>
+                <button
+                  disabled={busy}
+                  onClick={() =>
+                    void action(async () => {
+                      if (
+                        !confirm(
+                          "Sign out and erase this account’s local records, pending changes and recovery edits? Export a backup first. Other devices and server records are unchanged.",
+                        )
+                      )
+                        return;
+                      setUser(undefined);
+                      setRows([]);
+                      setEditing(undefined);
+                      window.mfaroDirty = false;
+                      try {
+                        await cloud.auth.signOut({ scope: "local" });
+                      } finally {
+                        await clearAccount(user.id);
+                      }
+                    })
+                  }
+                >
+                  Sign out & erase local data
+                </button>
+              </div>
+              <p className="notice">
+                Records saved here are available to anyone using this device
+                profile. Local financial records and backups are not encrypted.
+                Issuing invoices and recording payments require the online app.
+              </p>
+            </details>
+            {company && overview && view === "overview" && (
+              <DashboardOverview
+                {...overview}
+                createInvoice={
+                  <button
+                    className="button"
+                    disabled={busy}
+                    onClick={() => newRecord("invoices")}
+                  >
+                    Create invoice
+                  </button>
+                }
+                viewAll={
+                  <button
+                    className="text-button"
+                    onClick={() => navigate("invoices")}
+                  >
+                    View all
+                  </button>
+                }
+                invoiceLink={(invoice) => (
+                  <button
+                    className="text-button"
+                    onClick={() =>
+                      void action(async () => {
+                        const row = rows.find(
+                          (r) => r.kind === "invoices" && r.id === invoice.id,
+                        );
+                        if (!row) return;
+                        await open(row);
+                        setKind("invoices");
+                        setView("invoices");
+                      })
+                    }
+                  >
+                    {invoice.number}
+                  </button>
+                )}
+                notice={
+                  <p className="dashboard-source">
+                    Saved records on this device. Refresh records in Device
+                    &amp; sync for the latest business figures.
+                  </p>
+                }
+              />
+            )}
+            {company && view !== "overview" && view !== "sync" && (
+              <section className="workspace desktop-records">
+                <div className="page-title">
+                  <div>
+                    <p className="eyebrow">BUSINESS WORKSPACE</p>
+                    <h1>
+                      {kind === "clients"
+                        ? "Clients"
+                        : kind === "products"
+                          ? "Inventory"
                           : "Invoices"}
-                    </button>
-                  ))}
-                </nav>
+                    </h1>
+                  </div>
+                </div>
+
                 <button
                   disabled={busy}
                   className="button"
-                  onClick={() => {
-                    if (window.mfaroDirty) {
-                      alert(
-                        "Wait for your latest edits to finish saving on this device.",
-                      );
-                      return;
-                    }
-                    window.mfaroDirty = false;
-                    const id = crypto.randomUUID();
-                    setEditing({
-                      key: JSON.stringify([user.id, business, kind, id]),
-                      account: user.id,
-                      business,
-                      kind,
-                      id,
-                      version: 0,
-                      state: "Not saved",
-                      data:
-                        kind === "invoices"
-                          ? {
-                              client_id: "",
-                              due_date: "",
-                              notes: "",
-                              template: readDesign(company.invoice_design)
-                                .template,
-                              items: [
-                                newLine(Number(company.default_tax_rate || 0)),
-                              ],
-                            }
-                          : kind === "clients"
-                            ? { name: "", email: "", phone: "" }
-                            : { name: "", unit_price: 0, tax_rate: 0 },
-                    });
-                  }}
+                  onClick={() => newRecord(kind)}
                 >
                   New{" "}
                   {kind === "invoices"
@@ -1043,27 +1179,30 @@ function Workspace() {
                     close={() => setEditing(undefined)}
                   />
                 )}
-              </>
+              </section>
             )}
           </>
         )}
-        <details>
-          <summary>Install MfaroInvoice</summary>
-          <p>
-            Android / Chrome / Edge: choose Install app from the browser menu.
-            iPhone or iPad: open in Safari, tap Share → Add to Home Screen →
-            Open as Web App. On macOS Safari use File → Add to Dock where
-            available. Desktop Chrome/Edge use the address-bar install option.
-            Some browsers do not support installation; use a bookmark or the
-            desktop application.
-          </p>
-        </details>
-        <p>
-          Updates: save your work and export a backup before installing a newer
-          desktop release. Automatic desktop updates are not configured.
-        </p>
+        {(!user || view === "sync") && (
+          <section className="workspace desktop-help">
+            {!window.mfaroDesktop && (
+              <details>
+                <summary>Install MfaroInvoice</summary>
+                <p>
+                  Android / Chrome / Edge: choose Install app from the browser
+                  menu. iPhone or iPad: open in Safari, tap Share → Add to Home
+                  Screen. On supported macOS Safari choose File → Add to Dock.
+                </p>
+              </details>
+            )}
+            <p>
+              Save your work and export a backup before installing a desktop
+              update.
+            </p>
+          </section>
+        )}
       </main>
-    </>
+    </div>
   );
 }
 createRoot(document.getElementById("root")!).render(

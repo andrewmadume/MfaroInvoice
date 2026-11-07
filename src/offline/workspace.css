@@ -15,18 +15,11 @@
   color: #061b6b;
 }
 .offline-workspace {
-  max-width: 1250px;
-  margin: auto;
-  padding: 30px 24px;
+  max-width: none;
+  margin: 0;
+  padding: 0;
 }
-.offline-workspace h1 {
-  font-size: 42px;
-  letter-spacing: -1px;
-}
-.offline-workspace h2 {
-  font-size: 26px;
-  letter-spacing: 0;
-}
+
 .offline-workspace button,
 .offline-nav button {
   cursor: pointer;
@@ -181,4 +174,95 @@
   .invoice-paper {
     box-shadow: none !important;
   }
+}
+.desktop-session {
+  max-width: 1160px;
+  margin: auto;
+  padding: 20px 24px 12px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  color: #526383;
+  font-size: 13px;
+}
+.desktop-session p {
+  margin: 0;
+  flex-basis: 100%;
+}
+.connection {
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.connection::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.connection.online {
+  color: #087749;
+}
+.connection.offline {
+  color: #8a6200;
+}
+.device-tools {
+  max-width: 1112px;
+  margin: 8px auto 0 !important;
+  padding: 0 0 10px;
+}
+.device-tools[open] {
+  background: white;
+  border: 1px solid #dce7f8;
+  border-radius: 12px;
+  padding: 18px 24px;
+}
+.device-tools > summary {
+  color: #526383;
+  font-size: 14px;
+}
+.device-tools .offline-toolbar {
+  margin: 12px 0;
+}
+.device-tools .notice {
+  margin-bottom: 0;
+}
+.dashboard-source {
+  font-size: 13px;
+  color: #667797;
+  margin: -12px 0 24px;
+  line-height: 1.5;
+}
+.offline-workspace .text-button {
+  border: 0;
+  background: transparent;
+  padding: 7px 0;
+  color: #061b6b;
+  font-weight: 700;
+}
+.offline-workspace .stat-grid strong {
+  overflow-wrap: anywhere;
+}
+.desktop-help {
+  font-size: 13px;
+  color: #667797;
+  padding-top: 24px;
+}
+.desktop-sign-in {
+  max-width: 540px;
+}
+.desktop-sign-in h1 {
+  font-size: 42px;
+}
+@media (max-width: 1160px) {
+  .device-tools {
+    margin-left: 24px !important;
+    margin-right: 24px !important;
+  }
+}
+.offline-workspace {
+  padding: 0;
 }

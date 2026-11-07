@@ -49,7 +49,7 @@ await writeFile(
 );
 await writeFile(
   "public/offline/index.html",
-  `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MfaroInvoice — Device workspace</title><meta name="theme-color" content="#061b6b"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/icons/apple-touch-v3.png"><link rel="stylesheet" href="/offline/workspace.css"></head><body><div id="root"><p>Opening MfaroInvoice… If this message remains, reconnect once to finish downloading the workspace.</p></div><script type="module" src="/offline/workspace.js"></script></body></html>`,
+  `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MfaroInvoice</title><meta name="theme-color" content="#061b6b"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/icons/apple-touch-v3.png"><link rel="stylesheet" href="/offline/workspace.css"></head><body><div id="root"><p>Opening MfaroInvoice… If this message remains, reconnect once to finish downloading the workspace.</p></div><script type="module" src="/offline/workspace.js"></script></body></html>`,
 );
 // Native icons preserve the supplied artwork. ICO uses PNG-compressed entries.
 const png = await sharp("public/icons/app-512-v3.png")
