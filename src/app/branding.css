@@ -43,10 +43,11 @@
 
 .nav,
 .app-nav {
-  background: #B4D4F7;
+  background: #b4d4f7;
 }
 
-.app-nav nav a {
+.app-nav nav a,
+.app-nav nav button {
   color: #061b6b;
   padding: 8px 10px;
   border-bottom: 3px solid transparent;
@@ -54,18 +55,51 @@
   text-decoration: none;
 }
 
-.app-nav nav a[aria-current="page"] {
+.app-nav nav a[aria-current="page"],
+.app-nav nav button[aria-current="page"] {
   background: transparent;
   border-bottom-color: rgb(0, 168, 107);
   color: #061b6b;
   font-weight: 700;
 }
 
-.app-nav nav a:focus-visible {
+.app-nav nav a:focus-visible,
+.app-nav nav button:focus-visible {
   outline: 2px solid #061b6b;
   outline-offset: 3px;
 }
 
 .app-nav .business-name {
   color: #061b6b;
+}
+.app-nav nav {
+  flex: 1 1 640px;
+  min-width: 0;
+  gap: 6px;
+}
+.dashboard-overview .stat-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 800px) {
+  .dashboard-overview .stat-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.app-nav nav button {
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-bottom: 3px solid transparent;
+}
+.app-nav .desktop-brand {
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+}
+.desktop-external {
+  margin-left: 4px;
+  font-size: 11px;
 }
