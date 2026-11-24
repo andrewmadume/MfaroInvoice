@@ -79,3 +79,39 @@ test("invoice formats reject unknown tokens and retain long sequences", async ()
   assert.equal(designSchema.safeParse({template:"unsupported"}).success,false);
   assert.equal(designSchema.safeParse({accent:"red;display:none"}).success,false);
 });
+
+test("expense validation preserves entered amounts, dates and supplier details", async () => {
+  const { expenseSchema } = await import("../src/lib/expenses.ts");
+  const invoice = {
+    businessId: "11111111-1111-4111-8111-111111111111",
+    supplier: "  Local supplier  ", expenseDate: "2028-02-29",
+    category: "materials", description: "  Stock purchase  ", amount: "1250.50",
+    currency: "ZAR", status: "unpaid", invoiceReference: "",
+    storagePath: "", filename: "invoice.pdf",
+  };
+  const parsed = expenseSchema.parse(invoice);
+  assert.equal(parsed.amount, 1250.5);
+  assert.equal(parsed.supplier, "Local supplier");
+  assert.equal(parsed.description, "Stock purchase");
+  assert.equal(parsed.expenseDate, "2028-02-29");
+  for (const amount of [0, -1, Infinity, NaN, "not a number", 1_000_000_001]) {
+    assert.equal(expenseSchema.safeParse({ ...invoice, amount }).success, false);
+  }
+  assert.equal(expenseSchema.safeParse({ ...invoice, expenseDate: "2027-02-29" }).success, false);
+  assert.equal(expenseSchema.safeParse({ ...invoice, businessId: "../other-business" }).success, false);
+  assert.equal(expenseSchema.safeParse({ ...invoice, status: "issued" }).success, false);
+});
+
+test("invoice branding retains defaults and banking values after validator update", async () => {
+  const { designSchema } = await import("../src/lib/invoice-design.ts");
+  const design = designSchema.parse({ template: "letterhead", bankName: "  Demo Bank  ", accountNumber: "00123456" });
+  assert.equal(design.template, "letterhead");
+  assert.equal(design.accent, "#1155cc");
+  assert.equal(design.background, "#ffffff");
+  assert.equal(design.bankName, "Demo Bank");
+  assert.equal(design.accountNumber, "00123456");
+  assert.equal(design.paymentInstructions, "");
+  assert.equal(design.terms, "");
+  assert.equal(design.logoPath, "");
+  assert.equal(designSchema.safeParse({ bankName: "x".repeat(161) }).success, false);
+});

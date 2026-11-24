@@ -46,3 +46,6 @@ jobs:
           deno-version: v2.x
       - run: deno check supabase/functions/automation-dispatcher/index.ts supabase/functions/reminder-dispatcher/index.ts
       - run: deno test --allow-env=SCHEDULER_SECRET supabase/functions/_shared/scheduler.test.ts
+
+      - name: Check dependency security advisories
+        run: npm audit --json --audit-level=high
