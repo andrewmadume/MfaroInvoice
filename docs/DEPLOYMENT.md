@@ -8,11 +8,13 @@ MfaroInvoice is a server-rendered Next.js application. Deploy it to Vercel (or a
 2. Set the Production Branch to `main`.
 3. Add the production environment variables listed below in Vercel. Do not put application credentials in source control or GitHub Actions secrets.
 4. In Supabase Auth URL Configuration, set the Site URL to the final HTTPS production URL and add `<production-url>/auth/confirm` to Redirect URLs. Keep the same URL in `NEXT_PUBLIC_SITE_URL`.
-5. Add the GitHub repository secrets listed below. Pushing to `main` then verifies, builds, and deploys the app. A protected `production` GitHub Environment is recommended before enabling live payments.
+5. Keep the Vercel Git integration connected to this repository. It automatically builds and deploys pushes to `main`; no GitHub CLI deployment secrets are required for that path. Review **Validate application** before merging, because Vercel Git deployments do not wait for that workflow unless deployment checks are configured separately. The optional manual CLI workflow below uses the GitHub `production` Environment, which can be protected with approval rules.
 
-## GitHub repository secrets
+## Optional manual CLI deployment
 
-These are the only credentials used by `.github/workflows/production-deploy.yml`.
+The normal production path is Vercel’s Git integration. `.github/workflows/production-deploy.yml` runs only when **Manual production deployment** is dispatched in GitHub Actions. It is a fallback, not a second deployment on every push.
+
+Configure all three repository secrets below before using that manual workflow. It fails immediately with the missing setting names if credentials are absent; it never prints their values. These secrets are not needed for automatic Git deployments.
 
 | Secret | Purpose | Where to obtain it |
 | --- | --- | --- |
@@ -49,4 +51,4 @@ Set these in Vercel Project Settings → Environment Variables for **Production*
 
 ## Rollback
 
-The workflow deploys every successful commit to `main`. To roll back, revert the problematic commit on `main`; the resulting workflow run deploys the restored version. Use Vercel's deployment history only for urgent rollback when Git history cannot be changed immediately.
+To roll back, revert the problematic commit on `main`; Vercel’s Git integration deploys the restored source. Check the new deployment’s status in Vercel. For an urgent rollback, use Vercel’s deployment history, then reconcile `main` so a later Git deployment does not restore the problem. The optional manual CLI workflow can redeploy checked-out source only after its three secrets are configured.

@@ -1,8 +1,6 @@
-name: Deploy production
+name: Manual production deployment
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -25,6 +23,17 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
     steps:
+      - name: Check manual deployment credentials
+        shell: bash
+        run: |
+          deploy_missing=0
+          for deploy_setting in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            if [[ -z "${!deploy_setting}" ]]; then
+              echo "::error::Set ${deploy_setting} before running the optional manual deployment."
+              deploy_missing=1
+            fi
+          done
+          exit "$deploy_missing"
       - name: Check out source
         uses: actions/checkout@v4
 
