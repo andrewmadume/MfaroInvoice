@@ -177,6 +177,40 @@ try {
     .getByText(/Offline draft/)
     .first()
     .waitFor();
+  // Sidebar layout must remain outside the business content, with a vertical menu.
+  const sidebar = restarted.getByRole("complementary", { name: "Application sidebar" });
+  const navigation = restarted.getByRole("navigation", { name: "Business navigation" });
+  const sidebarBox = await sidebar.boundingBox();
+  const contentBox = await restarted.locator(".offline-workspace").boundingBox();
+  const topbarBox = await restarted.locator(".app-topbar").boundingBox();
+  const logoBox = await sidebar.locator(".sidebar-brand").boundingBox();
+  const navigationBox = await navigation.boundingBox();
+  assert.ok(sidebarBox && contentBox && topbarBox && logoBox && navigationBox);
+  assert.equal(sidebarBox.x, 0);
+  assert.ok(contentBox.x >= sidebarBox.x + sidebarBox.width - 1);
+  assert.ok(topbarBox.x >= sidebarBox.x + sidebarBox.width - 1);
+  const statusBox = await restarted.locator(".pwa-status").boundingBox();
+  if (statusBox && statusBox.height > 0) assert.ok(statusBox.x >= sidebarBox.width - 1);
+  assert.ok(logoBox.y + logoBox.height <= navigationBox.y);
+  const menuItems = navigation.getByRole("button");
+  assert.equal(await menuItems.count(), 15);
+  const positions = await menuItems.evaluateAll(items => items.map(item => {
+    const box = item.getBoundingClientRect(); return { x: box.x, y: box.y, height: box.height };
+  }));
+  for (let index = 1; index < positions.length; index++) {
+    assert.ok(Math.abs(positions[index].x - positions[0].x) < 1);
+    assert.ok(positions[index].y >= positions[index - 1].y + positions[index - 1].height);
+  }
+  assert.equal(await navigation.getByRole("button", { name: "Overview", exact: true }).getAttribute("aria-current"), "page");
+  assert.equal(await navigation.getByRole("button", { name: "Overview", exact: true }).evaluate(element => getComputedStyle(element).borderLeftColor), "rgb(0, 168, 107)");
+  await menuItems.last().scrollIntoViewIfNeeded();
+  assert.equal(await menuItems.last().isVisible(), true);
+  const lastItemBox = await menuItems.last().boundingBox();
+  const scrollerBox = await navigation.boundingBox();
+  assert.ok(lastItemBox && scrollerBox);
+  assert.ok(lastItemBox.y >= scrollerBox.y - 1);
+  assert.ok(lastItemBox.y + lastItemBox.height <= scrollerBox.y + scrollerBox.height + 1);
+  await navigation.evaluate(element => { element.scrollTop = 0; });
   await restarted.screenshot({
     path: "work/desktop-dashboard-aligned.png",
     fullPage: true,
@@ -188,11 +222,30 @@ try {
     ),
     true,
   );
+  const menuToggle = restarted.getByRole("button", { name: "Menu", exact: true });
+  assert.equal(await menuToggle.getAttribute("aria-expanded"), "false");
+  assert.equal(await navigation.isVisible(), false);
+  await menuToggle.focus();
+  await restarted.keyboard.press("Enter");
+  assert.equal(await menuToggle.getAttribute("aria-expanded"), "true");
+  assert.equal(await navigation.isVisible(), true);
+  await navigation.getByRole("button", { name: "Clients", exact: true }).click();
+  assert.equal(await menuToggle.getAttribute("aria-expanded"), "false");
+  assert.equal(await menuToggle.evaluate(element => document.activeElement === element), true);
+  await restarted.getByRole("heading", { name: "Clients", exact: true }).waitFor();
+  await menuToggle.click();
+  await navigation.getByRole("button", { name: "Overview", exact: true }).click();
+  await restarted.getByRole("heading", { name: "Know what’s next.", exact: true }).waitFor();
   await restarted.screenshot({
     path: "work/desktop-dashboard-mobile.png",
     fullPage: true,
   });
   await restarted.setViewportSize({ width: 1280, height: 720 });
+  await restarted.emulateMedia({ media: "print" });
+  assert.equal(await sidebar.isVisible(), false);
+  assert.equal(await restarted.locator(".app-topbar").isVisible(), false);
+  assert.equal(await restarted.locator(".app-shell").evaluate(element => getComputedStyle(element).paddingLeft), "0px");
+  await restarted.emulateMedia({ media: "screen" });
   await restarted
     .getByRole("button", { name: "Invoices", exact: true })
     .click();
@@ -259,7 +312,7 @@ try {
   await restarted.locator(".offline-workspace").waitFor();
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: Chrome headless offline launch, navigation fallback, persistent profile restart, customer/draft/queue persistence, tax totals, unfinished-edit recovery and update guard. Installed OS/PWA UI and physical printing are separate checks.",
+    "PASS: Chrome headless offline launch, navigation fallback, persistent profile restart, customer/draft/queue persistence, tax totals, unfinished-edit recovery and update guard. Sidebar positioning, mobile disclosure and print layout passed. Installed OS/PWA UI and physical printing are separate checks.",
   );
 } catch (error) {
   if (context) {
