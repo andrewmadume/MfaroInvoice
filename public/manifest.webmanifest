@@ -1,7 +1,9 @@
 {
   "name": "MfaroInvoice",
   "short_name": "MfaroInvoice",
-  "start_url": "/",
+  "id": "/",
+  "start_url": "/offline/index.html",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#061b6b",
   "theme_color": "#061b6b",

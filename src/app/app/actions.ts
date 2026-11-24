@@ -6,10 +6,10 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import sharp from "sharp";
 import { designSchema, numberFormat, templateId } from "@/lib/invoice-design";
+import { lineSchema } from "@/offline/model";
 
 const uuid = z.string().uuid();
-const itemSchema = z.object({ description: z.string().trim().min(1).max(500), quantity: z.coerce.number().positive().max(1_000_000), unitPrice: z.coerce.number().min(0).max(1_000_000_000), discountAmount: z.coerce.number().min(0).max(1_000_000_000).default(0), taxRate: z.coerce.number().min(0).max(100).default(0) });
-const itemsSchema = z.array(itemSchema).min(1).max(100);
+const itemsSchema = z.array(lineSchema).min(1).max(100);
 
 function failure(path: string): never { redirect(`${path}${path.includes("?") ? "&" : "?"}error=action-failed`); }
 function businessPath(businessId: string, suffix = "") { return `/app/${businessId}${suffix}`; }

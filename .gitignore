@@ -9,3 +9,7 @@ node_modules
 work/
 
 supabase/.temp/
+public/offline/
+dist-desktop/
+desktop/icon.ico
+desktop/icon.icns

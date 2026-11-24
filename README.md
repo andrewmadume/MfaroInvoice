@@ -4,6 +4,8 @@ Secure multi-tenant invoicing for African businesses. The repository starts with
 
 ## Run locally
 
+The shared PWA / Electron workspace, offline safety model, installer commands and release setup are documented in [Offline and desktop setup](docs/OFFLINE_DESKTOP.md). See [verified results and remaining checks](docs/UPGRADE_VERIFICATION.md) before distributing desktop candidates. Production requires the new offline-sync migration before the device workspace can sync.
+
 1. Copy `.env.example` to `.env.local` and fill in a Supabase project's URL, publishable key, and canonical application URL.
 2. Install dependencies with `npm install`.
 3. Apply every migration in `supabase/migrations` using Supabase CLI (`supabase db push`).

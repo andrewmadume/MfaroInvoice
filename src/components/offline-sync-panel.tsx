@@ -5,24 +5,24 @@ import { pendingOperations, queueOperation, removeOperation, type SyncOperation 
 
 type Option = { id: string; name: string };
 
-export function OfflineSyncPanel({ businessId, projects, products }: { businessId: string; projects: Option[]; products: Option[] }) {
+export function OfflineSyncPanel({ accountId, businessId, projects, products }: { accountId: string; businessId: string; projects: Option[]; products: Option[] }) {
   const [pending, setPending] = useState<SyncOperation[]>([]);
   const [message, setMessage] = useState("Queued work remains on this device until it is securely synchronized.");
-  const reload = async () => setPending(await pendingOperations(businessId));
+  const reload = async () => setPending(await pendingOperations(businessId, accountId));
   useEffect(() => {
     const online = () => {
       void (async () => {
-        try { const queued = await pendingOperations(businessId); setPending(queued); } catch { setMessage("Could not open the device queue."); }
+        try { const queued = await pendingOperations(businessId, accountId); setPending(queued); } catch { setMessage("Could not open the device queue."); }
       })();
     };
     online();
     window.addEventListener("online", online);
     return () => window.removeEventListener("online", online);
-  }, [businessId]);
+  }, [businessId, accountId]);
 
   async function flush() {
     try {
-    const queued = await pendingOperations(businessId);
+    const queued = await pendingOperations(businessId, accountId);
     if (!queued.length) { setMessage("No queued work to synchronize."); return; }
     let completed = 0;
     for (const operation of queued) {
@@ -38,7 +38,7 @@ export function OfflineSyncPanel({ businessId, projects, products }: { businessI
   async function queueTime(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); const form = event.currentTarget; const data = new FormData(form);
     try {
-    await queueOperation({ businessId, type: "time_entry.create", payload: { projectId: data.get("projectId"), entryDate: data.get("entryDate"), minutes: Number(data.get("minutes")), description: data.get("description"), billable: true } });
+    await queueOperation({ accountId, businessId, type: "time_entry.create", payload: { projectId: data.get("projectId"), entryDate: data.get("entryDate"), minutes: Number(data.get("minutes")), description: data.get("description"), billable: true } });
     form.reset(); await reload(); setMessage("Time entry queued on this device. Use Sync now when you are online.");
     } catch { setMessage("Could not queue this item. Check device storage and try again."); }
   }
@@ -46,7 +46,7 @@ export function OfflineSyncPanel({ businessId, projects, products }: { businessI
   async function queueInventory(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); const form = event.currentTarget; const data = new FormData(form);
     try {
-    await queueOperation({ businessId, type: "inventory.adjust", payload: { productId: data.get("productId"), quantityDelta: Number(data.get("quantityDelta")), reason: data.get("reason"), note: data.get("note") } });
+    await queueOperation({ accountId, businessId, type: "inventory.adjust", payload: { productId: data.get("productId"), quantityDelta: Number(data.get("quantityDelta")), reason: data.get("reason"), note: data.get("note") } });
     form.reset(); await reload(); setMessage("Inventory adjustment queued on this device. Use Sync now when you are online.");
     } catch { setMessage("Could not queue this item. Check device storage and try again."); }
   }

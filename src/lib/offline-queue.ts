@@ -1,4 +1,5 @@
 export type SyncOperation = {
+  accountId: string;
   operationId: string;
   businessId: string;
   type: "time_entry.create" | "inventory.adjust";
@@ -26,9 +27,9 @@ export async function queueOperation(operation: Omit<SyncOperation, "operationId
   return item;
 }
 
-export async function pendingOperations(businessId: string) {
+export async function pendingOperations(businessId: string, accountId: string) {
   const db = await openDatabase();
-  const items = await new Promise<SyncOperation[]>((resolve, reject) => { const request = db.transaction(storeName, "readonly").objectStore(storeName).getAll(); request.onsuccess = () => resolve((request.result as SyncOperation[]).filter((item) => item.businessId === businessId)); request.onerror = () => reject(request.error); });
+  const items = await new Promise<SyncOperation[]>((resolve, reject) => { const request = db.transaction(storeName, "readonly").objectStore(storeName).getAll(); request.onsuccess = () => resolve((request.result as SyncOperation[]).filter((item) => item.businessId === businessId && item.accountId === accountId)); request.onerror = () => reject(request.error); });
   db.close();
   return items;
 }

@@ -1,0 +1,17 @@
+export const businessNavigation = [
+  ["Overview", ""],
+  ["Invoices", "/invoices"],
+  ["Expenses", "/expenses"],
+  ["Quotes", "/quotes"],
+  ["Recurring", "/recurring"],
+  ["Clients", "/clients"],
+  ["Inventory", "/inventory"],
+  ["Time", "/time"],
+  ["Documents", "/documents"],
+  ["Reports", "/reports"],
+  ["Analytics", "/analytics"],
+  ["Payments", "/payments"],
+  ["Sync", "/sync"],
+  ["Security", "/security"],
+  ["Templates & settings", "/settings"],
+] as const;

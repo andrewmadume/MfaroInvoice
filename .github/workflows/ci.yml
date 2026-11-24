@@ -8,6 +8,10 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      # Build-only fixture values: no credentials or production backend access.
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: public-build-fixture
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,8 +23,46 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
       - run: deno check supabase/functions/automation-dispatcher/index.ts supabase/functions/reminder-dispatcher/index.ts
       - run: deno test --allow-env=SCHEDULER_SECRET supabase/functions/_shared/scheduler.test.ts
+
+      - name: Upload layout screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MfaroInvoice-sidebar-layout
+          path: work/desktop-dashboard-*.png
+          if-no-files-found: ignore
+  desktop-windows:
+    if: github.event_name == 'pull_request'
+    needs: verify
+    runs-on: windows-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Prepare public desktop configuration
+        shell: pwsh
+        run: |
+          $publicLines = @(Get-Content -LiteralPath .env.production | Where-Object { $_ -match '^(NEXT_PUBLIC_SUPABASE_URL|NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)=' })
+          if ($publicLines.Count -ne 2) { throw 'Public desktop project configuration is missing.' }
+          $publicLines | Set-Content -LiteralPath .env.local -Encoding utf8
+      - run: npm run desktop:dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MfaroInvoice-Windows-unsigned
+          path: dist-desktop/MfaroInvoice Setup *.exe
+          compression-level: 0
+          if-no-files-found: error

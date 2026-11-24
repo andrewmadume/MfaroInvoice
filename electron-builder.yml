@@ -1,0 +1,30 @@
+appId: za.co.madume.mfaroinvoice
+productName: MfaroInvoice
+asar: true
+directories:
+  output: dist-desktop
+files:
+  - desktop/**
+  - public/offline/**
+  - public/icons/**
+  - public/MfaroInvoice-logo.svg
+  - package.json
+  - '!node_modules/**'
+extraMetadata:
+  main: desktop/main.cjs
+win:
+  icon: desktop/icon.ico
+  target: nsis
+  signExecutable: false
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+mac:
+  icon: desktop/icon.icns
+  category: public.app-category.finance
+  target: [dmg, zip]
+linux:
+  icon: public/icons/app-512-v3.png
+  category: Office
+  target: AppImage
+publish: null

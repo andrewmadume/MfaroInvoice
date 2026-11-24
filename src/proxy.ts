@@ -3,6 +3,7 @@ import { updateSession } from "@/lib/supabase/proxy";
 import { copySessionResponse } from "@/lib/session-response";
 
 export async function proxy(request: NextRequest) {
+  if (request.nextUrl.pathname.startsWith("/offline/") || ["/sw.js", "/manifest.webmanifest"].includes(request.nextUrl.pathname)) return NextResponse.next();
   const { response, userId } = await updateSession(request);
   if ((request.nextUrl.pathname.startsWith("/app") || request.nextUrl.pathname.startsWith("/onboarding")) && !userId) {
     const url = new URL("/login", request.url);
