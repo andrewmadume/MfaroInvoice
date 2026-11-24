@@ -38,7 +38,7 @@ Configure Supabase Auth redirect URLs and email verification, run the cross-tena
 
 ## Deploy to production
 
-The included GitHub Actions workflow verifies and deploys pushes to `main` through Vercel. See [the production deployment guide](docs/DEPLOYMENT.md) for the exact Vercel environment variables, GitHub deployment secrets, Supabase redirect URLs, webhook setup, and rollback process.
+Vercel’s connected GitHub integration automatically deploys the `main` branch. Review the **Validate application** checks before merging; Git deployments run independently of those checks. The **Manual production deployment** GitHub Actions workflow is an optional CLI fallback and requires its own three repository secrets. See [the production deployment guide](docs/DEPLOYMENT.md) for environment variables, optional CLI credentials, Supabase redirect URLs, webhook setup, and rollback.
 
 ## Inspection repairs and verification
 
