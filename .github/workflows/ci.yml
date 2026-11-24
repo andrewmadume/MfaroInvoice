@@ -8,6 +8,10 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      # Build-only public fixtures. No production credentials or backend requests.
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: public-build-fixture
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,9 +22,30 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
+      - name: Prepare temporary PWA navigation fixture
+        run: node scripts/check-pwa-sidebar.mjs --prepare
       - run: npm run build
+      - name: Install isolated browser test tools
+        run: npm install --prefix .tools/pwa-browser --no-save --package-lock=false --ignore-scripts @playwright/test@1.64.1
+      - name: Install Chromium
+        run: node .tools/pwa-browser/node_modules/playwright/cli.js install --with-deps chromium
+      - name: Check PWA sidebar in Chromium
+        run: node scripts/check-pwa-sidebar.mjs --verify
+      - name: Remove temporary PWA navigation fixture
+        if: always()
+        run: node scripts/check-pwa-sidebar.mjs --cleanup
+      - name: Upload PWA sidebar screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MfaroInvoice-PWA-sidebar
+          path: work/pwa-sidebar-*.png
+          if-no-files-found: ignore
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
       - run: deno check supabase/functions/automation-dispatcher/index.ts supabase/functions/reminder-dispatcher/index.ts
       - run: deno test --allow-env=SCHEDULER_SECRET supabase/functions/_shared/scheduler.test.ts
+
+      - name: Check dependency security advisories
+        run: npm audit --json --audit-level=high
